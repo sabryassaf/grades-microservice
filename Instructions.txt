@@ -1,0 +1,3 @@
+1) To generate Go files:
+    run this following command while in grades-microservice dir:
+    protoc --go_out=paths=source_relative:./protos --go-grpc_out=paths=source_relative:./protos -I protos protos/grades_services.proto
