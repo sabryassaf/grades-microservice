@@ -8,7 +8,6 @@ import (
 
 	gpb "github.com/BetterGR/grades-microservice/protos"
 	"google.golang.org/grpc"
-
 	"k8s.io/klog/v2"
 )
 
@@ -25,20 +24,25 @@ type GradesServer struct {
 
 // GetCourseGrades returns all grades for enrolled students in a course.
 func (s *GradesServer) GetCourseGrades(ctx context.Context,
-	req *gpb.GetCourseGradesRequest) (*gpb.GetCourseGradesResponse, error) {
+	req *gpb.GetCourseGradesRequest,
+) (*gpb.GetCourseGradesResponse, error) {
 	logger := klog.FromContext(ctx)
 	grades := []*gpb.StudentCourseGrades{
-		{StudentId: "1", CourseId: "23134", Exams: []*gpb.ExamGrade{
-			{Course: "23134", ExamType: "final_a", Grade: "85"},
-			{Course: "23134", ExamType: "final_b", Grade: "90"}},
+		{
+			StudentId: "1", CourseId: "23134", Exams: []*gpb.ExamGrade{
+				{Course: "23134", ExamType: "final_a", Grade: "85"},
+				{Course: "23134", ExamType: "final_b", Grade: "90"},
+			},
 			Homeworks: []*gpb.HomeworkGrade{
 				{Course: "23134", HomeworkNumber: "1", Grade: "100"},
 				{Course: "23134", HomeworkNumber: "2", Grade: "95"},
 			},
 		},
-		{StudentId: "2", CourseId: "23134", Exams: []*gpb.ExamGrade{
-			{Course: "23134", ExamType: "final_a", Grade: "90"},
-			{Course: "23134", ExamType: "final_b", Grade: "95"}},
+		{
+			StudentId: "2", CourseId: "23134", Exams: []*gpb.ExamGrade{
+				{Course: "23134", ExamType: "final_a", Grade: "90"},
+				{Course: "23134", ExamType: "final_b", Grade: "95"},
+			},
 			Homeworks: []*gpb.HomeworkGrade{
 				{Course: "23134", HomeworkNumber: "1", Grade: "100"},
 				{Course: "23134", HomeworkNumber: "2", Grade: "95"},
@@ -46,26 +50,30 @@ func (s *GradesServer) GetCourseGrades(ctx context.Context,
 		},
 	}
 	// log the request.
-	logger.Info("Received request for course grades", "course_id", req.CourseId)
+	logger.Info("Received request for course grades", "course_id", req.GetCourseId())
+
 	return &gpb.GetCourseGradesResponse{Grades: grades}, nil
 }
 
 // GetStudentCourseGrades returns a specific student grades in specific course.
 func (s *GradesServer) GetStudentCourseGrades(ctx context.Context,
-	req *gpb.GetStudentCourseGradesRequest) (*gpb.GetStudentCourseGradesResponse, error) {
+	req *gpb.GetStudentCourseGradesRequest,
+) (*gpb.GetStudentCourseGradesResponse, error) {
 	logger := klog.FromContext(ctx)
 	studentCourseGrades := &gpb.StudentCourseGrades{
-		StudentId: req.StudentId,
-		CourseId:  req.CourseId,
+		StudentId: req.GetStudentId(),
+		CourseId:  req.GetCourseId(),
 		Exams: []*gpb.ExamGrade{
-			{Course: req.CourseId, ExamType: "final_a", Grade: "85"},
-			{Course: req.CourseId, ExamType: "final_b", Grade: "90"},
+			{Course: req.GetCourseId(), ExamType: "final_a", Grade: "85"},
+			{Course: req.GetCourseId(), ExamType: "final_b", Grade: "90"},
 		},
 		Homeworks: []*gpb.HomeworkGrade{
-			{Course: req.CourseId, HomeworkNumber: "1", Grade: "100"},
+			{Course: req.GetCourseId(), HomeworkNumber: "1", Grade: "100"},
 		},
 	}
-	logger.Info("Received request for student course grades", "student_id", req.StudentId)
+
+	logger.Info("Received request for student course grades", "student_id", req.GetStudentId())
+
 	return &gpb.GetStudentCourseGradesResponse{CourseGrades: studentCourseGrades}, nil
 }
 
