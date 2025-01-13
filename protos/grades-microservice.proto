@@ -26,6 +26,9 @@ service GradesService {
   // GetStudentCourseGrades returns a specific student grades in specific course.
   rpc GetStudentCourseGrades(GetStudentCourseGradesRequest) returns (GetStudentCourseGradesResponse);
 
+  // GetStudentGrades returns all grades for a student.
+  rpc GetStudentGrades(StudentId) returns (StudentGrades);
+  
   // AddHomeworkGrade adds a homework grade for a student in specific course.
   rpc AddHomeworkGrade(AddHomeworkGradeRequest) returns (Empty);
 
@@ -43,6 +46,11 @@ service GradesService {
 
   // DeleteExamGrade deletes an exam grade for a student in specific course.
   rpc DeleteExamGrade(DeleteExamGradeRequest) returns (Empty);
+}
+
+// Student Id
+message StudentId {
+  string student_id = 1;
 }
 
 // ExamGrade is a single Exam grade message.

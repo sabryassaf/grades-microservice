@@ -104,7 +104,7 @@ endif
 # Run the server
 run: proto fmt vet lint
 	@echo [RUN] Starting server...
-	@go run ./server/server.go $(ARGS)
+	@env $$(cat .env | xargs) go run ./server/server.go $(ARGS)
 
 # Build Docker image
 docker-build: proto fmt vet lint build

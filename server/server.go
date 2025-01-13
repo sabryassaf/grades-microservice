@@ -7,6 +7,7 @@ import (
 	"net"
 
 	gpb "github.com/BetterGR/grades-microservice/protos"
+	ms "github.com/TekClinic/MicroService-Lib"
 	"google.golang.org/grpc"
 	"k8s.io/klog/v2"
 )
@@ -20,6 +21,40 @@ const (
 type GradesServer struct {
 	// throws unimplemented error.
 	gpb.UnimplementedGradesServiceServer
+	ms.BaseServiceServer
+}
+
+// GetStudentGrades returns all grades for a student.
+func (s *GradesServer) GetStudentGrades(ctx context.Context, req *gpb.StudentId) (*gpb.StudentGrades, error) {
+	logger := klog.FromContext(ctx)
+	grades := &gpb.StudentGrades{
+		StudentId: "123456789",
+		Courses: []*gpb.StudentCourseGrades{
+			{
+				CourseId: "236781", Exams: []*gpb.ExamGrade{
+					{Course: "236781", ExamType: "final_a", Grade: "85"},
+					{Course: "236781", ExamType: "final_b", Grade: "90"},
+				}, Homeworks: []*gpb.HomeworkGrade{
+					{Course: "236781", HomeworkNumber: "1", Grade: "100"},
+					{Course: "236781", HomeworkNumber: "2", Grade: "95"},
+					{Course: "236781", HomeworkNumber: "3", Grade: "0"},
+				},
+			},
+			{
+				CourseId: "236990", Exams: []*gpb.ExamGrade{
+					{Course: "236990", ExamType: "final_a", Grade: "85"},
+					{Course: "236990", ExamType: "final_b", Grade: "90"},
+				}, Homeworks: []*gpb.HomeworkGrade{
+					{Course: "236990", HomeworkNumber: "1", Grade: "100"},
+					{Course: "236990", HomeworkNumber: "2", Grade: "95"},
+				},
+			},
+		},
+	}
+
+	logger.Info("Received request for student grades", "student_id", req.GetStudentId())
+
+	return grades, nil
 }
 
 // GetCourseGrades returns all grades for enrolled students in a course.
@@ -89,7 +124,7 @@ func main() {
 	// create a grpc server.
 	grpcServer := grpc.NewServer()
 	gpb.RegisterGradesServiceServer(grpcServer, &GradesServer{})
-
+	klog.Info("Grades server is running on port 50051")
 	// serve the grpc server.
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
