@@ -50,7 +50,8 @@ service GradesService {
 
 // Student Id
 message StudentId {
-  string student_id = 1;
+  string token = 1;
+  string student_id = 2;
 }
 
 // ExamGrade is a single Exam grade message.
@@ -86,7 +87,8 @@ message Empty {}
 
 // GetCourseGradesRequest is a request message to get grades of all students enrolled in a specific course.
 message GetCourseGradesRequest {
-  string course_id = 1;
+  string token = 1;
+  string course_id = 2;
 }
 
 // GetCourseGradesResponse is a response message for all students grades enrolled in a specific course.
@@ -96,8 +98,9 @@ message GetCourseGradesResponse {
 
 // GetStudentCourseGradesRequest is a request message to get a specific student grades in specific course.
 message GetStudentCourseGradesRequest {
-  string student_id = 1;
-  string course_id = 2;
+  string token = 1;
+  string student_id = 2;
+  string course_id = 3;
 }
 
 // GetStudentCourseGradesResponse is a response message for a specific student grades in specific course.
@@ -107,47 +110,53 @@ message GetStudentCourseGradesResponse {
 
 // AddHomeworkGradeRequest is a request message to add a homework grade for a student in specific course.
 message AddHomeworkGradeRequest {
-  string student_id = 1;
-  string course_id = 2;
-  string homework_number = 3;
-  string grade = 4;
+  string token = 1;
+  string student_id = 2;
+  string course_id = 3;
+  string homework_number = 4;
+  string grade = 5;
 }
 
 // UpdateHomeworkGradeRequest is a request message to update a homework grade for a student in specific course.
 message UpdateHomeworkGradeRequest {
-  string student_id = 1;
-  string course_id = 2;
-  string homework_number = 3;
-  string grade = 4;
+  string token = 1;
+  string student_id = 2;
+  string course_id = 3;
+  string homework_number = 4;
+  string grade = 5;
 }
 
 // AddExamGradeRequest is a request message to add an exam grade for a student in specific course.
 message AddExamGradeRequest {
-  string student_id = 1;
-  string course_id = 2;
-  string exam_type = 3;
-  string grade = 4;
+  string token = 1;
+  string student_id = 2;
+  string course_id = 3;
+  string exam_type = 4;
+  string grade = 5;
 }
 
 // UpdateExamGradeRequest is a request message to update an exam grade for a student in specific course.
 message UpdateExamGradeRequest {
-  string student_id = 1;
-  string course_id = 2;
-  string exam_type = 3;
-  string grade = 4;
+  string token = 1;
+  string student_id = 2;
+  string course_id = 3;
+  string exam_type = 4;
+  string grade = 5;
 }
 
 // DeleteHomeworkGradeRequest is a request message to delete a homework grade for a student in specific course.
 message DeleteHomeworkGradeRequest {
-  string student_id = 1;
-  string course_id = 2;
-  string homework_number = 3;
+  string token = 1;
+  string student_id = 2;
+  string course_id = 3;
+  string homework_number = 4;
 }
 
 // DeleteExamGradeRequest is a request message to delete an exam grade for a student in specific course.
 message DeleteExamGradeRequest {
-  string student_id = 1;
-  string course_id = 2;
-  string exam_type = 3;
+  string token = 1;
+  string student_id = 2;
+  string course_id = 3;
+  string exam_type = 4;
 }
 
