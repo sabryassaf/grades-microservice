@@ -30,6 +30,7 @@ type GradesServer struct {
 // GetStudentGrades returns all grades for a student.
 func (s *GradesServer) GetStudentGrades(ctx context.Context, req *gpb.StudentId) (*gpb.StudentGrades, error) {
 	logger := klog.FromContext(ctx)
+	klog.Info(req.GetToken())
 
 	_, err := s.VerifyToken(ctx, req.GetToken())
 	if err != nil {
@@ -159,20 +160,39 @@ func (s *GradesServer) GetStudentCourseGrades(ctx context.Context,
 	return &gpb.GetStudentCourseGradesResponse{CourseGrades: studentCourseGrades}, nil
 }
 
+func initGradesMicroserviceServer() (*GradesServer, error) {
+	base, err := ms.CreateBaseServiceServer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create base service: %w", err)
+	}
+
+	return &GradesServer{
+		BaseServiceServer:                base,
+		UnimplementedGradesServiceServer: gpb.UnimplementedGradesServiceServer{},
+	}, nil
+}
+
 // main server function.
 func main() {
+	// Initialize the server
+	server, err := initGradesMicroserviceServer()
+	if err != nil {
+		klog.Fatalf("Failed to initialize server: %v", err)
+	}
+
 	// init klog.
 	klog.InitFlags(nil)
 	// create a listener.
-	address := os.Getenv("GRADES_IP")
+	address := "localhost:" + os.Getenv("GRPC_PORT")
 
 	lis, err := net.Listen(connectionProtocol, address)
 	if err != nil {
 		klog.Error("Failed to listen", "error", err)
 	}
+
 	// create a grpc server.
 	grpcServer := grpc.NewServer()
-	gpb.RegisterGradesServiceServer(grpcServer, &GradesServer{})
+	gpb.RegisterGradesServiceServer(grpcServer, server)
 	klog.Info("Grades server is running on port 50051")
 	// serve the grpc server.
 	if err := grpcServer.Serve(lis); err != nil {
