@@ -30,10 +30,8 @@ type GradesServer struct {
 // GetStudentGrades returns all grades for a student.
 func (s *GradesServer) GetStudentGrades(ctx context.Context, req *gpb.StudentId) (*gpb.StudentGrades, error) {
 	logger := klog.FromContext(ctx)
-	klog.Info(req.GetToken())
 
-	_, err := s.VerifyToken(ctx, req.GetToken())
-	if err != nil {
+	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
@@ -44,18 +42,18 @@ func (s *GradesServer) GetStudentGrades(ctx context.Context, req *gpb.StudentId)
 			Courses: []*gpb.StudentCourseGrades{
 				{
 					CourseId: "236781", Exams: []*gpb.ExamGrade{
-					{Course: "236781", ExamType: "final_a", Grade: "85"},
-					{Course: "236781", ExamType: "final_b", Grade: "90"},
-				}, Homeworks: []*gpb.HomeworkGrade{
-					{Course: "236781", HomeworkNumber: "1", Grade: "100"},
-					{Course: "236781", HomeworkNumber: "2", Grade: "95"},
-					{Course: "236781", HomeworkNumber: "3", Grade: "0"},
-				},
+						{Course: "236781", ExamType: "final_a", Grade: "85"},
+						{Course: "236781", ExamType: "final_b", Grade: "90"},
+					}, Homeworks: []*gpb.HomeworkGrade{
+						{Course: "236781", HomeworkNumber: "1", Grade: "100"},
+						{Course: "236781", HomeworkNumber: "2", Grade: "95"},
+						{Course: "236781", HomeworkNumber: "3", Grade: "0"},
+					},
 				},
 				{
 					CourseId: "234311", Exams: []*gpb.ExamGrade{
-					{Course: "234311", ExamType: "final_a", Grade: "100"},
-				},
+						{Course: "234311", ExamType: "final_a", Grade: "100"},
+					},
 				},
 			},
 		}
@@ -70,18 +68,18 @@ func (s *GradesServer) GetStudentGrades(ctx context.Context, req *gpb.StudentId)
 		Courses: []*gpb.StudentCourseGrades{
 			{
 				CourseId: "236703", Exams: []*gpb.ExamGrade{
-				{Course: "236703", ExamType: "final_a", Grade: "85"},
-				{Course: "236703", ExamType: "final_b", Grade: "90"},
-			}, Homeworks: []*gpb.HomeworkGrade{
-				{Course: "236703", HomeworkNumber: "1", Grade: "100"},
-				{Course: "236703", HomeworkNumber: "2", Grade: "95"},
-				{Course: "236703", HomeworkNumber: "3", Grade: "0"},
-			},
+					{Course: "236703", ExamType: "final_a", Grade: "85"},
+					{Course: "236703", ExamType: "final_b", Grade: "90"},
+				}, Homeworks: []*gpb.HomeworkGrade{
+					{Course: "236703", HomeworkNumber: "1", Grade: "100"},
+					{Course: "236703", HomeworkNumber: "2", Grade: "95"},
+					{Course: "236703", HomeworkNumber: "3", Grade: "0"},
+				},
 			},
 			{
 				CourseId: "234311", Exams: []*gpb.ExamGrade{
-				{Course: "234311", ExamType: "final_a", Grade: "99"},
-			},
+					{Course: "234311", ExamType: "final_a", Grade: "99"},
+				},
 			},
 		},
 	}
@@ -106,9 +104,9 @@ func (s *GradesServer) GetCourseGrades(ctx context.Context,
 	grades := []*gpb.StudentCourseGrades{
 		{
 			StudentId: "1", CourseId: "23134", Exams: []*gpb.ExamGrade{
-			{Course: "23134", ExamType: "final_a", Grade: "85"},
-			{Course: "23134", ExamType: "final_b", Grade: "90"},
-		},
+				{Course: "23134", ExamType: "final_a", Grade: "85"},
+				{Course: "23134", ExamType: "final_b", Grade: "90"},
+			},
 			Homeworks: []*gpb.HomeworkGrade{
 				{Course: "23134", HomeworkNumber: "1", Grade: "100"},
 				{Course: "23134", HomeworkNumber: "2", Grade: "95"},
@@ -116,9 +114,9 @@ func (s *GradesServer) GetCourseGrades(ctx context.Context,
 		},
 		{
 			StudentId: "2", CourseId: "23134", Exams: []*gpb.ExamGrade{
-			{Course: "23134", ExamType: "final_a", Grade: "90"},
-			{Course: "23134", ExamType: "final_b", Grade: "95"},
-		},
+				{Course: "23134", ExamType: "final_a", Grade: "90"},
+				{Course: "23134", ExamType: "final_b", Grade: "95"},
+			},
 			Homeworks: []*gpb.HomeworkGrade{
 				{Course: "23134", HomeworkNumber: "1", Grade: "100"},
 				{Course: "23134", HomeworkNumber: "2", Grade: "95"},
@@ -137,8 +135,7 @@ func (s *GradesServer) GetStudentCourseGrades(ctx context.Context,
 ) (*gpb.GetStudentCourseGradesResponse, error) {
 	logger := klog.FromContext(ctx)
 
-	_, err := s.VerifyToken(ctx, req.GetToken())
-	if err != nil {
+	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
