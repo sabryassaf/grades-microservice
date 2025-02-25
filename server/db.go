@@ -43,7 +43,7 @@ func InitializeDatabase(ctx context.Context) (*Database, error) {
 
 // createDatabaseIfNotExists checks if the database exists and creates it if not.
 func createDatabaseIfNotExists(ctx context.Context) {
-	// Connect to the PostgreSQL server (not the bettergr itself yet).
+	// Connect to the PostgreSQL server.
 	dsn := os.Getenv("DSN")
 	connector := pgdriver.NewConnector(pgdriver.WithDSN(dsn))
 	sqldb := sql.OpenDB(connector)
