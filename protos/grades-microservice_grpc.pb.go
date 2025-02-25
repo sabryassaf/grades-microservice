@@ -35,13 +35,9 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	GradesService_GetCourseGrades_FullMethodName        = "/grades.GradesService/GetCourseGrades"
 	GradesService_GetStudentCourseGrades_FullMethodName = "/grades.GradesService/GetStudentCourseGrades"
-	GradesService_GetStudentGrades_FullMethodName       = "/grades.GradesService/GetStudentGrades"
-	GradesService_AddHomeworkGrade_FullMethodName       = "/grades.GradesService/AddHomeworkGrade"
-	GradesService_AddExamGrade_FullMethodName           = "/grades.GradesService/AddExamGrade"
-	GradesService_UpdateHomeworkGrade_FullMethodName    = "/grades.GradesService/UpdateHomeworkGrade"
-	GradesService_UpdateExamGrade_FullMethodName        = "/grades.GradesService/UpdateExamGrade"
-	GradesService_DeleteHomeworkGrade_FullMethodName    = "/grades.GradesService/DeleteHomeworkGrade"
-	GradesService_DeleteExamGrade_FullMethodName        = "/grades.GradesService/DeleteExamGrade"
+	GradesService_AddSingleGrade_FullMethodName         = "/grades.GradesService/AddSingleGrade"
+	GradesService_UpdateSingleGrade_FullMethodName      = "/grades.GradesService/UpdateSingleGrade"
+	GradesService_RemoveSingleGrade_FullMethodName      = "/grades.GradesService/RemoveSingleGrade"
 )
 
 // GradesServiceClient is the client API for GradesService service.
@@ -50,24 +46,16 @@ const (
 //
 // GradesService is a microservice responsible for managing grades.
 type GradesServiceClient interface {
-	// GetCourseGrades returns all students grades enrolled in a specific course.
+	// GetCourseGrades returns all students grades enrolled in a specific course for a specific semester.
 	GetCourseGrades(ctx context.Context, in *GetCourseGradesRequest, opts ...grpc.CallOption) (*GetCourseGradesResponse, error)
-	// GetStudentCourseGrades returns a specific student grades in specific course.
+	// GetStudentCourseGrades returns a specific student all grades in a specific course for a specific semester.
 	GetStudentCourseGrades(ctx context.Context, in *GetStudentCourseGradesRequest, opts ...grpc.CallOption) (*GetStudentCourseGradesResponse, error)
-	// GetStudentGrades returns all grades for a student.
-	GetStudentGrades(ctx context.Context, in *StudentId, opts ...grpc.CallOption) (*StudentGrades, error)
-	// AddHomeworkGrade adds a homework grade for a student in specific course.
-	AddHomeworkGrade(ctx context.Context, in *AddHomeworkGradeRequest, opts ...grpc.CallOption) (*Empty, error)
-	// AddExamGrade adds an exam grade for a student in specific course.
-	AddExamGrade(ctx context.Context, in *AddExamGradeRequest, opts ...grpc.CallOption) (*Empty, error)
-	// UpdateHomeworkGrade updates a homework grade for a student in specific course.
-	UpdateHomeworkGrade(ctx context.Context, in *UpdateHomeworkGradeRequest, opts ...grpc.CallOption) (*Empty, error)
-	// UpdateExamGrade updates an exam grade for a student in specific course.
-	UpdateExamGrade(ctx context.Context, in *UpdateExamGradeRequest, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteHomeworkGrade deletes a homework grade for a student in specific course.
-	DeleteHomeworkGrade(ctx context.Context, in *DeleteHomeworkGradeRequest, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteExamGrade deletes an exam grade for a student in specific course.
-	DeleteExamGrade(ctx context.Context, in *DeleteExamGradeRequest, opts ...grpc.CallOption) (*Empty, error)
+	// AddSingleGrade adds a single grade for a student in a course for a specific semester.
+	AddSingleGrade(ctx context.Context, in *AddSingleGradeRequest, opts ...grpc.CallOption) (*AddSingleGradeResponse, error)
+	// UpdateSingleGrade updates a single grade for a student in a course for a specific semester.
+	UpdateSingleGrade(ctx context.Context, in *UpdateSingleGradeRequest, opts ...grpc.CallOption) (*UpdateSingleGradeResponse, error)
+	// RemoveSingleGrade removes a single grade for a student in a course for a specific semester.
+	RemoveSingleGrade(ctx context.Context, in *RemoveSingleGradeRequest, opts ...grpc.CallOption) (*RemoveSingleGradeResponse, error)
 }
 
 type gradesServiceClient struct {
@@ -98,70 +86,30 @@ func (c *gradesServiceClient) GetStudentCourseGrades(ctx context.Context, in *Ge
 	return out, nil
 }
 
-func (c *gradesServiceClient) GetStudentGrades(ctx context.Context, in *StudentId, opts ...grpc.CallOption) (*StudentGrades, error) {
+func (c *gradesServiceClient) AddSingleGrade(ctx context.Context, in *AddSingleGradeRequest, opts ...grpc.CallOption) (*AddSingleGradeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StudentGrades)
-	err := c.cc.Invoke(ctx, GradesService_GetStudentGrades_FullMethodName, in, out, cOpts...)
+	out := new(AddSingleGradeResponse)
+	err := c.cc.Invoke(ctx, GradesService_AddSingleGrade_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gradesServiceClient) AddHomeworkGrade(ctx context.Context, in *AddHomeworkGradeRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *gradesServiceClient) UpdateSingleGrade(ctx context.Context, in *UpdateSingleGradeRequest, opts ...grpc.CallOption) (*UpdateSingleGradeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, GradesService_AddHomeworkGrade_FullMethodName, in, out, cOpts...)
+	out := new(UpdateSingleGradeResponse)
+	err := c.cc.Invoke(ctx, GradesService_UpdateSingleGrade_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gradesServiceClient) AddExamGrade(ctx context.Context, in *AddExamGradeRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *gradesServiceClient) RemoveSingleGrade(ctx context.Context, in *RemoveSingleGradeRequest, opts ...grpc.CallOption) (*RemoveSingleGradeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, GradesService_AddExamGrade_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gradesServiceClient) UpdateHomeworkGrade(ctx context.Context, in *UpdateHomeworkGradeRequest, opts ...grpc.CallOption) (*Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, GradesService_UpdateHomeworkGrade_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gradesServiceClient) UpdateExamGrade(ctx context.Context, in *UpdateExamGradeRequest, opts ...grpc.CallOption) (*Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, GradesService_UpdateExamGrade_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gradesServiceClient) DeleteHomeworkGrade(ctx context.Context, in *DeleteHomeworkGradeRequest, opts ...grpc.CallOption) (*Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, GradesService_DeleteHomeworkGrade_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gradesServiceClient) DeleteExamGrade(ctx context.Context, in *DeleteExamGradeRequest, opts ...grpc.CallOption) (*Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, GradesService_DeleteExamGrade_FullMethodName, in, out, cOpts...)
+	out := new(RemoveSingleGradeResponse)
+	err := c.cc.Invoke(ctx, GradesService_RemoveSingleGrade_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,24 +122,16 @@ func (c *gradesServiceClient) DeleteExamGrade(ctx context.Context, in *DeleteExa
 //
 // GradesService is a microservice responsible for managing grades.
 type GradesServiceServer interface {
-	// GetCourseGrades returns all students grades enrolled in a specific course.
+	// GetCourseGrades returns all students grades enrolled in a specific course for a specific semester.
 	GetCourseGrades(context.Context, *GetCourseGradesRequest) (*GetCourseGradesResponse, error)
-	// GetStudentCourseGrades returns a specific student grades in specific course.
+	// GetStudentCourseGrades returns a specific student all grades in a specific course for a specific semester.
 	GetStudentCourseGrades(context.Context, *GetStudentCourseGradesRequest) (*GetStudentCourseGradesResponse, error)
-	// GetStudentGrades returns all grades for a student.
-	GetStudentGrades(context.Context, *StudentId) (*StudentGrades, error)
-	// AddHomeworkGrade adds a homework grade for a student in specific course.
-	AddHomeworkGrade(context.Context, *AddHomeworkGradeRequest) (*Empty, error)
-	// AddExamGrade adds an exam grade for a student in specific course.
-	AddExamGrade(context.Context, *AddExamGradeRequest) (*Empty, error)
-	// UpdateHomeworkGrade updates a homework grade for a student in specific course.
-	UpdateHomeworkGrade(context.Context, *UpdateHomeworkGradeRequest) (*Empty, error)
-	// UpdateExamGrade updates an exam grade for a student in specific course.
-	UpdateExamGrade(context.Context, *UpdateExamGradeRequest) (*Empty, error)
-	// DeleteHomeworkGrade deletes a homework grade for a student in specific course.
-	DeleteHomeworkGrade(context.Context, *DeleteHomeworkGradeRequest) (*Empty, error)
-	// DeleteExamGrade deletes an exam grade for a student in specific course.
-	DeleteExamGrade(context.Context, *DeleteExamGradeRequest) (*Empty, error)
+	// AddSingleGrade adds a single grade for a student in a course for a specific semester.
+	AddSingleGrade(context.Context, *AddSingleGradeRequest) (*AddSingleGradeResponse, error)
+	// UpdateSingleGrade updates a single grade for a student in a course for a specific semester.
+	UpdateSingleGrade(context.Context, *UpdateSingleGradeRequest) (*UpdateSingleGradeResponse, error)
+	// RemoveSingleGrade removes a single grade for a student in a course for a specific semester.
+	RemoveSingleGrade(context.Context, *RemoveSingleGradeRequest) (*RemoveSingleGradeResponse, error)
 	mustEmbedUnimplementedGradesServiceServer()
 }
 
@@ -208,26 +148,14 @@ func (UnimplementedGradesServiceServer) GetCourseGrades(context.Context, *GetCou
 func (UnimplementedGradesServiceServer) GetStudentCourseGrades(context.Context, *GetStudentCourseGradesRequest) (*GetStudentCourseGradesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStudentCourseGrades not implemented")
 }
-func (UnimplementedGradesServiceServer) GetStudentGrades(context.Context, *StudentId) (*StudentGrades, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetStudentGrades not implemented")
+func (UnimplementedGradesServiceServer) AddSingleGrade(context.Context, *AddSingleGradeRequest) (*AddSingleGradeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddSingleGrade not implemented")
 }
-func (UnimplementedGradesServiceServer) AddHomeworkGrade(context.Context, *AddHomeworkGradeRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddHomeworkGrade not implemented")
+func (UnimplementedGradesServiceServer) UpdateSingleGrade(context.Context, *UpdateSingleGradeRequest) (*UpdateSingleGradeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSingleGrade not implemented")
 }
-func (UnimplementedGradesServiceServer) AddExamGrade(context.Context, *AddExamGradeRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddExamGrade not implemented")
-}
-func (UnimplementedGradesServiceServer) UpdateHomeworkGrade(context.Context, *UpdateHomeworkGradeRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateHomeworkGrade not implemented")
-}
-func (UnimplementedGradesServiceServer) UpdateExamGrade(context.Context, *UpdateExamGradeRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateExamGrade not implemented")
-}
-func (UnimplementedGradesServiceServer) DeleteHomeworkGrade(context.Context, *DeleteHomeworkGradeRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteHomeworkGrade not implemented")
-}
-func (UnimplementedGradesServiceServer) DeleteExamGrade(context.Context, *DeleteExamGradeRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteExamGrade not implemented")
+func (UnimplementedGradesServiceServer) RemoveSingleGrade(context.Context, *RemoveSingleGradeRequest) (*RemoveSingleGradeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveSingleGrade not implemented")
 }
 func (UnimplementedGradesServiceServer) mustEmbedUnimplementedGradesServiceServer() {}
 func (UnimplementedGradesServiceServer) testEmbeddedByValue()                       {}
@@ -286,128 +214,56 @@ func _GradesService_GetStudentCourseGrades_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GradesService_GetStudentGrades_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StudentId)
+func _GradesService_AddSingleGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddSingleGradeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GradesServiceServer).GetStudentGrades(ctx, in)
+		return srv.(GradesServiceServer).AddSingleGrade(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GradesService_GetStudentGrades_FullMethodName,
+		FullMethod: GradesService_AddSingleGrade_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GradesServiceServer).GetStudentGrades(ctx, req.(*StudentId))
+		return srv.(GradesServiceServer).AddSingleGrade(ctx, req.(*AddSingleGradeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GradesService_AddHomeworkGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddHomeworkGradeRequest)
+func _GradesService_UpdateSingleGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSingleGradeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GradesServiceServer).AddHomeworkGrade(ctx, in)
+		return srv.(GradesServiceServer).UpdateSingleGrade(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GradesService_AddHomeworkGrade_FullMethodName,
+		FullMethod: GradesService_UpdateSingleGrade_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GradesServiceServer).AddHomeworkGrade(ctx, req.(*AddHomeworkGradeRequest))
+		return srv.(GradesServiceServer).UpdateSingleGrade(ctx, req.(*UpdateSingleGradeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GradesService_AddExamGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddExamGradeRequest)
+func _GradesService_RemoveSingleGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveSingleGradeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GradesServiceServer).AddExamGrade(ctx, in)
+		return srv.(GradesServiceServer).RemoveSingleGrade(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GradesService_AddExamGrade_FullMethodName,
+		FullMethod: GradesService_RemoveSingleGrade_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GradesServiceServer).AddExamGrade(ctx, req.(*AddExamGradeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GradesService_UpdateHomeworkGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateHomeworkGradeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GradesServiceServer).UpdateHomeworkGrade(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GradesService_UpdateHomeworkGrade_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GradesServiceServer).UpdateHomeworkGrade(ctx, req.(*UpdateHomeworkGradeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GradesService_UpdateExamGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateExamGradeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GradesServiceServer).UpdateExamGrade(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GradesService_UpdateExamGrade_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GradesServiceServer).UpdateExamGrade(ctx, req.(*UpdateExamGradeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GradesService_DeleteHomeworkGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteHomeworkGradeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GradesServiceServer).DeleteHomeworkGrade(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GradesService_DeleteHomeworkGrade_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GradesServiceServer).DeleteHomeworkGrade(ctx, req.(*DeleteHomeworkGradeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GradesService_DeleteExamGrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteExamGradeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GradesServiceServer).DeleteExamGrade(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GradesService_DeleteExamGrade_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GradesServiceServer).DeleteExamGrade(ctx, req.(*DeleteExamGradeRequest))
+		return srv.(GradesServiceServer).RemoveSingleGrade(ctx, req.(*RemoveSingleGradeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -428,32 +284,16 @@ var GradesService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GradesService_GetStudentCourseGrades_Handler,
 		},
 		{
-			MethodName: "GetStudentGrades",
-			Handler:    _GradesService_GetStudentGrades_Handler,
+			MethodName: "AddSingleGrade",
+			Handler:    _GradesService_AddSingleGrade_Handler,
 		},
 		{
-			MethodName: "AddHomeworkGrade",
-			Handler:    _GradesService_AddHomeworkGrade_Handler,
+			MethodName: "UpdateSingleGrade",
+			Handler:    _GradesService_UpdateSingleGrade_Handler,
 		},
 		{
-			MethodName: "AddExamGrade",
-			Handler:    _GradesService_AddExamGrade_Handler,
-		},
-		{
-			MethodName: "UpdateHomeworkGrade",
-			Handler:    _GradesService_UpdateHomeworkGrade_Handler,
-		},
-		{
-			MethodName: "UpdateExamGrade",
-			Handler:    _GradesService_UpdateExamGrade_Handler,
-		},
-		{
-			MethodName: "DeleteHomeworkGrade",
-			Handler:    _GradesService_DeleteHomeworkGrade_Handler,
-		},
-		{
-			MethodName: "DeleteExamGrade",
-			Handler:    _GradesService_DeleteExamGrade_Handler,
+			MethodName: "RemoveSingleGrade",
+			Handler:    _GradesService_RemoveSingleGrade_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

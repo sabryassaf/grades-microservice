@@ -20,143 +20,118 @@ package grades;
 
 //GradesService is a microservice responsible for managing grades.
 service GradesService {
-  // GetCourseGrades returns all students grades enrolled in a specific course.
+  // GetCourseGrades returns all students grades enrolled in a specific course for a specific semester.
   rpc GetCourseGrades(GetCourseGradesRequest) returns (GetCourseGradesResponse);
-
-  // GetStudentCourseGrades returns a specific student grades in specific course.
+  // GetStudentCourseGrades returns a specific student all grades in a specific course for a specific semester.
   rpc GetStudentCourseGrades(GetStudentCourseGradesRequest) returns (GetStudentCourseGradesResponse);
-
-  // GetStudentGrades returns all grades for a student.
-  rpc GetStudentGrades(StudentId) returns (StudentGrades);
-  
-  // AddHomeworkGrade adds a homework grade for a student in specific course.
-  rpc AddHomeworkGrade(AddHomeworkGradeRequest) returns (Empty);
-
-  // AddExamGrade adds an exam grade for a student in specific course.
-  rpc AddExamGrade(AddExamGradeRequest) returns (Empty);
-
-  // UpdateHomeworkGrade updates a homework grade for a student in specific course.
-  rpc UpdateHomeworkGrade(UpdateHomeworkGradeRequest) returns (Empty);
-
-  // UpdateExamGrade updates an exam grade for a student in specific course.
-  rpc UpdateExamGrade(UpdateExamGradeRequest) returns (Empty);
-
-  // DeleteHomeworkGrade deletes a homework grade for a student in specific course.
-  rpc DeleteHomeworkGrade(DeleteHomeworkGradeRequest) returns (Empty);
-
-  // DeleteExamGrade deletes an exam grade for a student in specific course.
-  rpc DeleteExamGrade(DeleteExamGradeRequest) returns (Empty);
+  // AddSingleGrade adds a single grade for a student in a course for a specific semester.
+  rpc AddSingleGrade(AddSingleGradeRequest) returns (AddSingleGradeResponse);
+  // UpdateSingleGrade updates a single grade for a student in a course for a specific semester.
+  rpc UpdateSingleGrade(UpdateSingleGradeRequest) returns (UpdateSingleGradeResponse);
+  // RemoveSingleGrade removes a single grade for a student in a course for a specific semester.
+  rpc RemoveSingleGrade(RemoveSingleGradeRequest) returns (RemoveSingleGradeResponse);
 }
 
-// Student Id
-message StudentId {
+// SemesterTerm represents the semester.
+enum SemesterTerm {
+  SEMESTER_TERM_UNSPECIFIED = 0;
+  SEMESTER_TERM_FALL = 1;
+  SEMESTER_TERM_SPRING = 2;
+}
+
+// Semester represents the semester.
+message Semester {
+  SemesterTerm term = 1;
+  int32 year = 2;
+}
+
+// SingleGrade is a single grade message.
+message SingleGrade {
+  Semester semester = 1;
+  string gradeId = 2;
+  string studentId = 3;
+  string courseId = 4;
+  string gradeType = 5;
+  string itemId = 6;
+  string gradeValue = 7;
+  string gradedBy = 8;
+  string comments = 9;
+}
+
+// AddSingleGradeRequest is a request message to add a single grade for a student in a course.
+message AddSingleGradeRequest {
   string token = 1;
-  string student_id = 2;
+  Semester semester = 2;
+  string gradeId = 3;
+  string studentId = 4;
+  string courseId = 5;
+  string gradeType = 6;
+  string itemId = 7;
+  string gradeValue = 8;
+  string gradedBy = 9;
+  string comments = 10;
 }
 
-// ExamGrade is a single Exam grade message.
-message ExamGrade {
-  string course = 1;
-  string exam_type = 2;
-  string grade = 3;
+// AddSingleGradeResponse is a response message to add a single grade for a specific student in a specific course for a specific semester.
+message AddSingleGradeResponse {
+  SingleGrade grade = 1;
 }
 
-// HomeworkGrade is a single Homework grade message.
-message HomeworkGrade {
-  string course = 1;
-  string homework_number = 2;
-  string grade = 3;
-}
-
-// StudentCourseGrades represent all specific course grades for a student.
-message StudentCourseGrades {
-  string student_id = 1;
-  string course_id = 2;
-  repeated ExamGrade exams = 3;
-  repeated HomeworkGrade homeworks = 4;
-}
-
-// StudentGrades represent all grades for a student.
-message StudentGrades {
-  string student_id = 1;
-  repeated StudentCourseGrades courses = 2;
-}
-
-// Empty message could be used later to validate the request.
-message Empty {}
-
-// GetCourseGradesRequest is a request message to get grades of all students enrolled in a specific course.
-message GetCourseGradesRequest {
-  string token = 1;
-  string course_id = 2;
-}
-
-// GetCourseGradesResponse is a response message for all students grades enrolled in a specific course.
-message GetCourseGradesResponse {
-  repeated StudentCourseGrades grades = 1;
-}
-
-// GetStudentCourseGradesRequest is a request message to get a specific student grades in specific course.
+// GetStundetCourseGradesRequest is a request message to get all grades for a student in a specific course for a specific semester.
 message GetStudentCourseGradesRequest {
   string token = 1;
-  string student_id = 2;
-  string course_id = 3;
+  string courseId = 2;
+  Semester semester = 3;
+  string studentId = 4;
 }
 
-// GetStudentCourseGradesResponse is a response message for a specific student grades in specific course.
+// GetStudentCourseGradesResponse is a response message to get all grades for a student in a specific course for a specific semester.
 message GetStudentCourseGradesResponse {
-  StudentCourseGrades course_grades = 1;
+  repeated SingleGrade grades = 1;
 }
 
-// AddHomeworkGradeRequest is a request message to add a homework grade for a student in specific course.
-message AddHomeworkGradeRequest {
+// UpdateSingleGradeRequest is a request message to update a single grade for a specific student in a specific course for a specific semester.
+message UpdateSingleGradeRequest {
   string token = 1;
-  string student_id = 2;
-  string course_id = 3;
-  string homework_number = 4;
-  string grade = 5;
+  string courseId = 2;
+  Semester semester = 3;
+  string studentId = 4;
+  string gradeId = 5;
+  string gradeValue = 6;
+  string gradedBy = 7;
+  string comments = 8;
+  string gradeType = 9;
+  string itemId = 10;
 }
 
-// UpdateHomeworkGradeRequest is a request message to update a homework grade for a student in specific course.
-message UpdateHomeworkGradeRequest {
-  string token = 1;
-  string student_id = 2;
-  string course_id = 3;
-  string homework_number = 4;
-  string grade = 5;
+// UpdateSingleGradeResponse is a response message to update a single grade for a specific student in a specific course for a specific semester.
+message UpdateSingleGradeResponse {
+  SingleGrade grade = 1;
 }
 
-// AddExamGradeRequest is a request message to add an exam grade for a student in specific course.
-message AddExamGradeRequest {
+// RemoveSingleGradeRequest is a request message to remove a single grade for a specific student in a specific course for a specific semester.
+message RemoveSingleGradeRequest {
   string token = 1;
-  string student_id = 2;
-  string course_id = 3;
-  string exam_type = 4;
-  string grade = 5;
+  string courseId = 2;
+  Semester semester = 3;
+  string studentId = 4;
+  string gradeId = 5;
 }
 
-// UpdateExamGradeRequest is a request message to update an exam grade for a student in specific course.
-message UpdateExamGradeRequest {
-  string token = 1;
-  string student_id = 2;
-  string course_id = 3;
-  string exam_type = 4;
-  string grade = 5;
+// RemoveSingleGradeResponse is a response message to remove a single grade for a specific student in a specific course for a specific semester.
+message RemoveSingleGradeResponse {
+  bool success = 1;
 }
 
-// DeleteHomeworkGradeRequest is a request message to delete a homework grade for a student in specific course.
-message DeleteHomeworkGradeRequest {
+// GetCourseGradesRequest is a request message to get all students grades for a specific course for a specific semester.
+message GetCourseGradesRequest {
   string token = 1;
-  string student_id = 2;
-  string course_id = 3;
-  string homework_number = 4;
+  string courseId = 2;
+  Semester semester = 3;
 }
 
-// DeleteExamGradeRequest is a request message to delete an exam grade for a student in specific course.
-message DeleteExamGradeRequest {
-  string token = 1;
-  string student_id = 2;
-  string course_id = 3;
-  string exam_type = 4;
+// GetCourseGradesResponse is a response message to get all students grades for a specific course for a specific semester.
+message GetCourseGradesResponse {
+  repeated SingleGrade grades = 1;
 }
 
