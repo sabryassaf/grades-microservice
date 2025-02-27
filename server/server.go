@@ -61,7 +61,7 @@ func (s *GradesServer) GetCourseGrades(ctx context.Context,
 		"semester", req.GetSemester())
 
 	// get course grades.
-	grades, err := s.db.GetCourseGrades(ctx, req.GetCourseId(), req.GetSemester().String())
+	grades, err := s.db.GetCourseGrades(ctx, req.GetCourseId(), req.GetSemester())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get course grades: %w", err)
 	}
@@ -99,7 +99,7 @@ func (s *GradesServer) GetStudentCourseGrades(ctx context.Context,
 		"semester", req.GetSemester(), "student_id", req.GetStudentId())
 
 	// get student course grades.
-	grades, err := s.db.GetStudentCourseGrades(ctx, req.GetCourseId(), req.GetSemester().String(), req.GetStudentId())
+	grades, err := s.db.GetStudentCourseGrades(ctx, req.GetCourseId(), req.GetSemester(), req.GetStudentId())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get student course grades: %w", err)
 	}
@@ -140,7 +140,7 @@ func (s *GradesServer) AddSingleGrade(ctx context.Context,
 	grade := &Grades{
 		StudentID:  req.GetStudentId(),
 		CourseID:   req.GetCourseId(),
-		Semester:   req.GetSemester().String(),
+		Semester:   req.GetSemester(),
 		GradeType:  req.GetGradeType(),
 		ItemID:     req.GetItemId(),
 		GradeValue: req.GetGradeValue(),
@@ -176,7 +176,7 @@ func (s *GradesServer) UpdateSingleGrade(ctx context.Context,
 		GradesID:   req.GetGradeId(),
 		StudentID:  req.GetStudentId(),
 		CourseID:   req.GetCourseId(),
-		Semester:   req.GetSemester().String(),
+		Semester:   req.GetSemester(),
 		GradeType:  req.GetGradeType(),
 		ItemID:     req.GetItemId(),
 		GradeValue: req.GetGradeValue(),
@@ -210,7 +210,7 @@ func (s *GradesServer) RemoveSingleGrade(ctx context.Context,
 		GradesID:  req.GetGradeId(),
 		StudentID: req.GetStudentId(),
 		CourseID:  req.GetCourseId(),
-		Semester:  req.GetSemester().String(),
+		Semester:  req.GetSemester(),
 	}
 
 	if err := s.db.RemoveSingleGrade(ctx, grade); err != nil {
@@ -220,9 +220,47 @@ func (s *GradesServer) RemoveSingleGrade(ctx context.Context,
 	return &gpb.RemoveSingleGradeResponse{}, nil
 }
 
+// GetStudentSemesterGrades returns all grades for a specific student for a specific semester.
+func (s *GradesServer) GetStudentSemesterGrades(ctx context.Context,
+	req *gpb.GetStudentSemesterGradesRequest,
+) (*gpb.GetStudentSemesterGradesResponse, error) {
+	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
+		return nil, fmt.Errorf("authentication failed: %w",
+			status.Error(codes.Unauthenticated, err.Error()))
+	}
+
+	logger := klog.FromContext(ctx)
+	logger.V(logLevelDebug).Info("Received request for student semester grades",
+		"semester", req.GetSemester(), "student_id", req.GetStudentId())
+
+	// get student semester grades.
+	grades, err := s.db.GetStudentSemesterGrades(ctx, req.GetSemester(), req.GetStudentId())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get student semester grades: %w", err)
+	}
+
+	// create response.
+	gradesResponse := []*gpb.SingleGrade{}
+	for _, grade := range grades {
+		gradesResponse = append(gradesResponse, &gpb.SingleGrade{
+			GradeId:    grade.GradesID,
+			StudentId:  grade.StudentID,
+			CourseId:   grade.CourseID,
+			Semester:   req.GetSemester(),
+			GradeType:  grade.GradeType,
+			ItemId:     grade.ItemID,
+			GradeValue: grade.GradeValue,
+			GradedBy:   grade.GradedBy,
+			Comments:   grade.Comments,
+		})
+	}
+
+	return &gpb.GetStudentSemesterGradesResponse{Grades: gradesResponse}, nil
+}
+
 // main server function.
 func main() {
-	// Initialize the server
+	// Initialize the server.
 	server, err := initGradesMicroserviceServer(context.Background())
 	if err != nil {
 		klog.Fatalf("Failed to initialize server: %v", err)

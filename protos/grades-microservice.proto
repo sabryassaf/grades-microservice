@@ -30,24 +30,14 @@ service GradesService {
   rpc UpdateSingleGrade(UpdateSingleGradeRequest) returns (UpdateSingleGradeResponse);
   // RemoveSingleGrade removes a single grade for a student in a course for a specific semester.
   rpc RemoveSingleGrade(RemoveSingleGradeRequest) returns (RemoveSingleGradeResponse);
+  // GetStudentSemesterGrades returns all grades for a specific student for a specific semester.
+  rpc GetStudentSemesterGrades(GetStudentSemesterGradesRequest) returns (GetStudentSemesterGradesResponse);
 }
 
-// SemesterTerm represents the semester.
-enum SemesterTerm {
-  SEMESTER_TERM_UNSPECIFIED = 0;
-  SEMESTER_TERM_FALL = 1;
-  SEMESTER_TERM_SPRING = 2;
-}
-
-// Semester represents the semester.
-message Semester {
-  SemesterTerm term = 1;
-  int32 year = 2;
-}
 
 // SingleGrade is a single grade message.
 message SingleGrade {
-  Semester semester = 1;
+  string semester = 1;
   string gradeId = 2;
   string studentId = 3;
   string courseId = 4;
@@ -61,7 +51,7 @@ message SingleGrade {
 // AddSingleGradeRequest is a request message to add a single grade for a student in a course.
 message AddSingleGradeRequest {
   string token = 1;
-  Semester semester = 2;
+  string semester = 2;
   string gradeId = 3;
   string studentId = 4;
   string courseId = 5;
@@ -81,7 +71,7 @@ message AddSingleGradeResponse {
 message GetStudentCourseGradesRequest {
   string token = 1;
   string courseId = 2;
-  Semester semester = 3;
+  string semester = 3;
   string studentId = 4;
 }
 
@@ -94,7 +84,7 @@ message GetStudentCourseGradesResponse {
 message UpdateSingleGradeRequest {
   string token = 1;
   string courseId = 2;
-  Semester semester = 3;
+  string semester = 3;
   string studentId = 4;
   string gradeId = 5;
   string gradeValue = 6;
@@ -113,7 +103,7 @@ message UpdateSingleGradeResponse {
 message RemoveSingleGradeRequest {
   string token = 1;
   string courseId = 2;
-  Semester semester = 3;
+  string semester = 3;
   string studentId = 4;
   string gradeId = 5;
 }
@@ -127,11 +117,23 @@ message RemoveSingleGradeResponse {
 message GetCourseGradesRequest {
   string token = 1;
   string courseId = 2;
-  Semester semester = 3;
+  string semester = 3;
 }
 
 // GetCourseGradesResponse is a response message to get all students grades for a specific course for a specific semester.
 message GetCourseGradesResponse {
+  repeated SingleGrade grades = 1;
+}
+
+// GetStudentSemesterGradesRequest is a request message to get all grades for a specific student for a specific semester.
+message GetStudentSemesterGradesRequest {
+  string token = 1;
+  string semester = 2;
+  string studentId = 3;
+}
+
+// GetStudentSemesterGradesResponse is a response message to get all grades for a specific student for a specific semester.
+message GetStudentSemesterGradesResponse {
   repeated SingleGrade grades = 1;
 }
 

@@ -33,11 +33,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GradesService_GetCourseGrades_FullMethodName        = "/grades.GradesService/GetCourseGrades"
-	GradesService_GetStudentCourseGrades_FullMethodName = "/grades.GradesService/GetStudentCourseGrades"
-	GradesService_AddSingleGrade_FullMethodName         = "/grades.GradesService/AddSingleGrade"
-	GradesService_UpdateSingleGrade_FullMethodName      = "/grades.GradesService/UpdateSingleGrade"
-	GradesService_RemoveSingleGrade_FullMethodName      = "/grades.GradesService/RemoveSingleGrade"
+	GradesService_GetCourseGrades_FullMethodName          = "/grades.GradesService/GetCourseGrades"
+	GradesService_GetStudentCourseGrades_FullMethodName   = "/grades.GradesService/GetStudentCourseGrades"
+	GradesService_AddSingleGrade_FullMethodName           = "/grades.GradesService/AddSingleGrade"
+	GradesService_UpdateSingleGrade_FullMethodName        = "/grades.GradesService/UpdateSingleGrade"
+	GradesService_RemoveSingleGrade_FullMethodName        = "/grades.GradesService/RemoveSingleGrade"
+	GradesService_GetStudentSemesterGrades_FullMethodName = "/grades.GradesService/GetStudentSemesterGrades"
 )
 
 // GradesServiceClient is the client API for GradesService service.
@@ -56,6 +57,8 @@ type GradesServiceClient interface {
 	UpdateSingleGrade(ctx context.Context, in *UpdateSingleGradeRequest, opts ...grpc.CallOption) (*UpdateSingleGradeResponse, error)
 	// RemoveSingleGrade removes a single grade for a student in a course for a specific semester.
 	RemoveSingleGrade(ctx context.Context, in *RemoveSingleGradeRequest, opts ...grpc.CallOption) (*RemoveSingleGradeResponse, error)
+	// GetStudentSemesterGrades returns all grades for a specific student for a specific semester.
+	GetStudentSemesterGrades(ctx context.Context, in *GetStudentSemesterGradesRequest, opts ...grpc.CallOption) (*GetStudentSemesterGradesResponse, error)
 }
 
 type gradesServiceClient struct {
@@ -116,6 +119,16 @@ func (c *gradesServiceClient) RemoveSingleGrade(ctx context.Context, in *RemoveS
 	return out, nil
 }
 
+func (c *gradesServiceClient) GetStudentSemesterGrades(ctx context.Context, in *GetStudentSemesterGradesRequest, opts ...grpc.CallOption) (*GetStudentSemesterGradesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStudentSemesterGradesResponse)
+	err := c.cc.Invoke(ctx, GradesService_GetStudentSemesterGrades_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GradesServiceServer is the server API for GradesService service.
 // All implementations must embed UnimplementedGradesServiceServer
 // for forward compatibility.
@@ -132,6 +145,8 @@ type GradesServiceServer interface {
 	UpdateSingleGrade(context.Context, *UpdateSingleGradeRequest) (*UpdateSingleGradeResponse, error)
 	// RemoveSingleGrade removes a single grade for a student in a course for a specific semester.
 	RemoveSingleGrade(context.Context, *RemoveSingleGradeRequest) (*RemoveSingleGradeResponse, error)
+	// GetStudentSemesterGrades returns all grades for a specific student for a specific semester.
+	GetStudentSemesterGrades(context.Context, *GetStudentSemesterGradesRequest) (*GetStudentSemesterGradesResponse, error)
 	mustEmbedUnimplementedGradesServiceServer()
 }
 
@@ -156,6 +171,9 @@ func (UnimplementedGradesServiceServer) UpdateSingleGrade(context.Context, *Upda
 }
 func (UnimplementedGradesServiceServer) RemoveSingleGrade(context.Context, *RemoveSingleGradeRequest) (*RemoveSingleGradeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveSingleGrade not implemented")
+}
+func (UnimplementedGradesServiceServer) GetStudentSemesterGrades(context.Context, *GetStudentSemesterGradesRequest) (*GetStudentSemesterGradesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStudentSemesterGrades not implemented")
 }
 func (UnimplementedGradesServiceServer) mustEmbedUnimplementedGradesServiceServer() {}
 func (UnimplementedGradesServiceServer) testEmbeddedByValue()                       {}
@@ -268,6 +286,24 @@ func _GradesService_RemoveSingleGrade_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GradesService_GetStudentSemesterGrades_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStudentSemesterGradesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GradesServiceServer).GetStudentSemesterGrades(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GradesService_GetStudentSemesterGrades_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GradesServiceServer).GetStudentSemesterGrades(ctx, req.(*GetStudentSemesterGradesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GradesService_ServiceDesc is the grpc.ServiceDesc for GradesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -294,6 +330,10 @@ var GradesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveSingleGrade",
 			Handler:    _GradesService_RemoveSingleGrade_Handler,
+		},
+		{
+			MethodName: "GetStudentSemesterGrades",
+			Handler:    _GradesService_GetStudentSemesterGrades_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

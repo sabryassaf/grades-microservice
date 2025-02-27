@@ -142,6 +142,9 @@ func (db *Database) GetStudentCourseGrades(ctx context.Context, courseID string,
 func (db *Database) AddSingleGrade(ctx context.Context, grade *Grades) error {
 	// create unique grade id.
 	grade.GradesID = uuid.New().String()
+	grade.GradedAt = time.Now()
+	grade.UpdatedAt = time.Now()
+
 	if _, err := db.db.NewInsert().Model(grade).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to add grade: %w", err)
 	}
@@ -185,6 +188,20 @@ func (db *Database) GetCourseGrades(ctx context.Context, courseID string, semest
 	if err := db.db.NewSelect().Model(&grades).Where(
 		"course_id = ?", courseID).Where("semester = ?", semester).Scan(ctx); err != nil {
 		return nil, fmt.Errorf("failed to get course grades: %w", err)
+	}
+
+	return grades, nil
+}
+
+// GetStudentSemesterGrades returns all grades for a specific student for a specific semester.
+func (db *Database) GetStudentSemesterGrades(ctx context.Context, semester string,
+	studentID string,
+) ([]*Grades, error) {
+	grades := []*Grades{}
+
+	if err := db.db.NewSelect().Model(&grades).Where("student_id = ?",
+		studentID).Where("semester = ?", semester).Scan(ctx); err != nil {
+		return nil, fmt.Errorf("failed to get student semester grades: %w", err)
 	}
 
 	return grades, nil

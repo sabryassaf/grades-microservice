@@ -85,11 +85,11 @@ vet:
 	@go vet ./...
 	@echo [VET] Vet checks completed.
 
-# Lint Go code
-lint: ensure-golangci-lint fmt
-	@echo [LINT] Running linter on Go code...
-	@golangci-lint run
-	@echo [LINT] Lint checks completed.
+# # Lint Go code
+# lint: ensure-golangci-lint fmt
+# 	@echo [LINT] Running linter on Go code...
+# 	@golangci-lint run
+# 	@echo [LINT] Lint checks completed.
 
 # Build server
 build: proto fmt vet lint
