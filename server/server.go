@@ -124,24 +124,12 @@ func (s *GradesServer) AddSingleGrade(ctx context.Context,
 	logger.V(logLevelDebug).Info("Received request for add single grade", "course_id", req.GetGrade().GetCourseID(),
 		"semester", req.GetGrade().GetSemester(), "student_id", req.GetGrade().GetStudentID())
 
-	// create grade.
-	grade := &gpb.SingleGrade{
-		StudentID:  req.GetGrade().GetStudentID(),
-		CourseID:   req.GetGrade().GetCourseID(),
-		Semester:   req.GetGrade().GetSemester(),
-		GradeType:  req.GetGrade().GetGradeType(),
-		ItemID:     req.GetGrade().GetItemID(),
-		GradeValue: req.GetGrade().GetGradeValue(),
-		GradedBy:   req.GetGrade().GetGradedBy(),
-		Comments:   req.GetGrade().GetComments(),
-	}
-
 	// add grade.
-	if _, err := s.db.AddGrade(ctx, grade); err != nil {
+	if _, err := s.db.AddGrade(ctx, req.GetGrade()); err != nil {
 		return nil, fmt.Errorf("failed to add single grade: %w", err)
 	}
 
-	return &gpb.AddSingleGradeResponse{Grade: grade}, nil
+	return &gpb.AddSingleGradeResponse{Grade: req.GetGrade()}, nil
 }
 
 // UpdateSingleGrade updates a single grade for a specific student in a specific course for a specific semester.
@@ -157,26 +145,14 @@ func (s *GradesServer) UpdateSingleGrade(ctx context.Context,
 	logger.V(logLevelDebug).Info("Received request for update single grade", "course_id", req.GetGrade().GetCourseID(),
 		"semester", req.GetGrade().GetSemester(), "student_id", req.GetGrade().GetStudentID())
 
-	// create grade.
-	grade := &gpb.SingleGrade{
-		GradeID:    req.GetGrade().GetGradeID(),
-		StudentID:  req.GetGrade().GetStudentID(),
-		CourseID:   req.GetGrade().GetCourseID(),
-		Semester:   req.GetGrade().GetSemester(),
-		GradeType:  req.GetGrade().GetGradeType(),
-		ItemID:     req.GetGrade().GetItemID(),
-		GradeValue: req.GetGrade().GetGradeValue(),
-		GradedBy:   req.GetGrade().GetGradedBy(),
-		Comments:   req.GetGrade().GetComments(),
-	}
-
 	// update grade.
-	updatedGrade, err := s.db.UpdateGrade(ctx, grade)
+	updatedGrade, err := s.db.UpdateGrade(ctx, req.GetGrade())
 	if err != nil {
 		return nil, fmt.Errorf("failed to update single grade: %w", err)
 	}
 
-	grade = &gpb.SingleGrade{
+	// updated grade.
+	grade := &gpb.SingleGrade{
 		GradeID:    updatedGrade.GradeID,
 		StudentID:  updatedGrade.StudentID,
 		CourseID:   updatedGrade.CourseID,
