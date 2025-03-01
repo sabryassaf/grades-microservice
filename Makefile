@@ -77,7 +77,7 @@ fmt: ensure-gofumpt ensure-gci
 	@go fmt ./...
 	@gofumpt -w .
 	@gci write --skip-generated .
-	@echo [FMT] Go code formatted .
+	@echo [FMT] Go code formatted.
 
 # Vet Go code
 vet:
@@ -85,11 +85,11 @@ vet:
 	@go vet ./...
 	@echo [VET] Vet checks completed.
 
-# # Lint Go code
-# lint: ensure-golangci-lint fmt
-# 	@echo [LINT] Running linter on Go code...
-# 	@golangci-lint run
-# 	@echo [LINT] Lint checks completed.
+# Lint Go code
+lint: ensure-golangci-lint fmt
+	@echo [LINT] Running linter on Go code...
+	@golangci-lint run
+	@echo [LINT] Lint checks completed.
 
 # Build server
 build: proto fmt vet lint
@@ -104,12 +104,12 @@ endif
 # Run the server
 run: proto fmt vet lint
 	@echo [RUN] Starting server...
-ifeq ($(OS),Windows_NT)
-	@setlocal enabledelayedexpansion && ( \
-		for /F "tokens=1,2 delims==" %%i in (.env) do set %%i=%%j) && go run ./server/...
-else
-	@env $$(cat .env | xargs) go run ./server/...
-endif
+	@go run ./server $(ARGS)
+
+test: proto gomod fmt vet lint
+	@echo [TEST] Running tests...
+	@go test -v ./server/ | grep -v '=== RUN' | sed 's/--- PASS:/ [PASS]/' | sed 's/--- FAIL:/ [FAIL]/'
+	@echo [TEST] Tests completed.
 
 # Build Docker image
 docker-build: proto fmt vet lint build

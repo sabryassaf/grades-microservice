@@ -5,12 +5,14 @@ go 1.23.3
 require (
 	github.com/TekClinic/MicroService-Lib v0.1.3
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.10.0
 	github.com/uptrace/bun v1.2.10
 	github.com/uptrace/bun/dialect/pgdialect v1.2.10
 	github.com/uptrace/bun/driver/pgdriver v1.2.10
 	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.2
+	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.130.1
 )
 

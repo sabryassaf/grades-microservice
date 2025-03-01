@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"time"
 
 	gpb "github.com/BetterGR/grades-microservice/protos"
 	ms "github.com/TekClinic/MicroService-Lib"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,16 +27,31 @@ type GradesServer struct {
 	// throws unimplemented error.
 	gpb.UnimplementedGradesServiceServer
 	ms.BaseServiceServer
-	db *Database
+	db     *Database
+	Claims ms.Claims
 }
 
-func initGradesMicroserviceServer(ctx context.Context) (*GradesServer, error) {
+// VerifyToken returns the injected Claims instead of the default.
+func (s *GradesServer) VerifyToken(ctx context.Context, token string) error {
+	if s.Claims != nil {
+		return nil
+	}
+
+	// Default behavior.
+	if _, err := s.BaseServiceServer.VerifyToken(ctx, token); err != nil {
+		return fmt.Errorf("failed to verify token: %w", err)
+	}
+
+	return nil
+}
+
+func initGradesMicroserviceServer() (*GradesServer, error) {
 	base, err := ms.CreateBaseServiceServer()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create base service: %w", err)
 	}
 
-	database, err := InitializeDatabase(ctx)
+	database, err := InitializeDatabase()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
@@ -51,169 +67,143 @@ func initGradesMicroserviceServer(ctx context.Context) (*GradesServer, error) {
 func (s *GradesServer) GetCourseGrades(ctx context.Context,
 	req *gpb.GetCourseGradesRequest,
 ) (*gpb.GetCourseGradesResponse, error) {
-	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
+	if err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
 
 	logger := klog.FromContext(ctx)
-	logger.V(logLevelDebug).Info("Received request for course grades", "course_id", req.GetCourseId(),
+	logger.V(logLevelDebug).Info("Received request for course grades", "course_id", req.GetCourseID(),
 		"semester", req.GetSemester())
 
 	// get course grades.
-	grades, err := s.db.GetCourseGrades(ctx, req.GetCourseId(), req.GetSemester())
+	grades, err := s.db.GetCourseGrades(ctx, req.GetCourseID(), req.GetSemester())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get course grades: %w", err)
 	}
 
-	// create response.
-	gradesResponse := []*gpb.SingleGrade{}
-	for _, grade := range grades {
-		gradesResponse = append(gradesResponse, &gpb.SingleGrade{
-			GradeId:    grade.GradesID,
-			StudentId:  grade.StudentID,
-			CourseId:   grade.CourseID,
-			Semester:   req.GetSemester(),
-			GradeType:  grade.GradeType,
-			ItemId:     grade.ItemID,
-			GradeValue: grade.GradeValue,
-			GradedBy:   grade.GradedBy,
-			Comments:   grade.Comments,
-		})
-	}
-
-	return &gpb.GetCourseGradesResponse{Grades: gradesResponse}, nil
+	return &gpb.GetCourseGradesResponse{
+		Grades: s.createGradesResponse(grades),
+	}, nil
 }
 
 // GetStudentCourseGrades returns all grades for a specific student in a specific course for a specific semester.
 func (s *GradesServer) GetStudentCourseGrades(ctx context.Context,
 	req *gpb.GetStudentCourseGradesRequest,
 ) (*gpb.GetStudentCourseGradesResponse, error) {
-	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
+	if err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
 
 	logger := klog.FromContext(ctx)
-	logger.V(logLevelDebug).Info("Received request for student course grades", "course_id", req.GetCourseId(),
-		"semester", req.GetSemester(), "student_id", req.GetStudentId())
+	logger.V(logLevelDebug).Info("Received request for student course grades", "course_id", req.GetCourseID(),
+		"semester", req.GetSemester(), "student_id", req.GetStudentID())
 
 	// get student course grades.
-	grades, err := s.db.GetStudentCourseGrades(ctx, req.GetCourseId(), req.GetSemester(), req.GetStudentId())
+	grades, err := s.db.GetStudentCourseGrades(ctx, req.GetCourseID(), req.GetSemester(), req.GetStudentID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get student course grades: %w", err)
 	}
 
-	// create response.
-	gradesResponse := []*gpb.SingleGrade{}
-	for _, grade := range grades {
-		gradesResponse = append(gradesResponse, &gpb.SingleGrade{
-			GradeId:    grade.GradesID,
-			StudentId:  grade.StudentID,
-			CourseId:   grade.CourseID,
-			Semester:   req.GetSemester(),
-			GradeType:  grade.GradeType,
-			ItemId:     grade.ItemID,
-			GradeValue: grade.GradeValue,
-			GradedBy:   grade.GradedBy,
-			Comments:   grade.Comments,
-		})
-	}
-
-	return &gpb.GetStudentCourseGradesResponse{Grades: gradesResponse}, nil
+	return &gpb.GetStudentCourseGradesResponse{
+		Grades: s.createGradesResponse(grades),
+	}, nil
 }
 
 // AddSingleGrade adds a single grade for a specific student in a specific course for a specific semester.
 func (s *GradesServer) AddSingleGrade(ctx context.Context,
 	req *gpb.AddSingleGradeRequest,
 ) (*gpb.AddSingleGradeResponse, error) {
-	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
+	if err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
 
 	logger := klog.FromContext(ctx)
-	logger.V(logLevelDebug).Info("Received request for add single grade", "course_id", req.GetCourseId(),
-		"semester", req.GetSemester(), "student_id", req.GetStudentId())
+	logger.V(logLevelDebug).Info("Received request for add single grade", "course_id", req.GetGrade().GetCourseID(),
+		"semester", req.GetGrade().GetSemester(), "student_id", req.GetGrade().GetStudentID())
 
 	// create grade.
-	grade := &Grades{
-		StudentID:  req.GetStudentId(),
-		CourseID:   req.GetCourseId(),
-		Semester:   req.GetSemester(),
-		GradeType:  req.GetGradeType(),
-		ItemID:     req.GetItemId(),
-		GradeValue: req.GetGradeValue(),
-		GradedBy:   req.GetGradedBy(),
-		Comments:   req.GetComments(),
-		GradedAt:   time.Now(),
-		UpdatedAt:  time.Now(),
+	grade := &gpb.SingleGrade{
+		StudentID:  req.GetGrade().GetStudentID(),
+		CourseID:   req.GetGrade().GetCourseID(),
+		Semester:   req.GetGrade().GetSemester(),
+		GradeType:  req.GetGrade().GetGradeType(),
+		ItemID:     req.GetGrade().GetItemID(),
+		GradeValue: req.GetGrade().GetGradeValue(),
+		GradedBy:   req.GetGrade().GetGradedBy(),
+		Comments:   req.GetGrade().GetComments(),
 	}
 
 	// add grade.
-	if err := s.db.AddSingleGrade(ctx, grade); err != nil {
+	if _, err := s.db.AddGrade(ctx, grade); err != nil {
 		return nil, fmt.Errorf("failed to add single grade: %w", err)
 	}
 
-	return &gpb.AddSingleGradeResponse{}, nil
+	return &gpb.AddSingleGradeResponse{Grade: grade}, nil
 }
 
 // UpdateSingleGrade updates a single grade for a specific student in a specific course for a specific semester.
 func (s *GradesServer) UpdateSingleGrade(ctx context.Context,
 	req *gpb.UpdateSingleGradeRequest,
 ) (*gpb.UpdateSingleGradeResponse, error) {
-	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
+	if err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
 
 	logger := klog.FromContext(ctx)
-	logger.V(logLevelDebug).Info("Received request for update single grade", "course_id", req.GetCourseId(),
-		"semester", req.GetSemester(), "student_id", req.GetStudentId())
+	logger.V(logLevelDebug).Info("Received request for update single grade", "course_id", req.GetGrade().GetCourseID(),
+		"semester", req.GetGrade().GetSemester(), "student_id", req.GetGrade().GetStudentID())
 
 	// create grade.
-	grade := &Grades{
-		GradesID:   req.GetGradeId(),
-		StudentID:  req.GetStudentId(),
-		CourseID:   req.GetCourseId(),
-		Semester:   req.GetSemester(),
-		GradeType:  req.GetGradeType(),
-		ItemID:     req.GetItemId(),
-		GradeValue: req.GetGradeValue(),
-		GradedBy:   req.GetGradedBy(),
-		Comments:   req.GetComments(),
-		UpdatedAt:  time.Now(),
+	grade := &gpb.SingleGrade{
+		GradeID:    req.GetGrade().GetGradeID(),
+		StudentID:  req.GetGrade().GetStudentID(),
+		CourseID:   req.GetGrade().GetCourseID(),
+		Semester:   req.GetGrade().GetSemester(),
+		GradeType:  req.GetGrade().GetGradeType(),
+		ItemID:     req.GetGrade().GetItemID(),
+		GradeValue: req.GetGrade().GetGradeValue(),
+		GradedBy:   req.GetGrade().GetGradedBy(),
+		Comments:   req.GetGrade().GetComments(),
 	}
 
 	// update grade.
-	if err := s.db.UpdateSingleGrade(ctx, grade); err != nil {
+	updatedGrade, err := s.db.UpdateGrade(ctx, grade)
+	if err != nil {
 		return nil, fmt.Errorf("failed to update single grade: %w", err)
 	}
 
-	return &gpb.UpdateSingleGradeResponse{}, nil
+	grade = &gpb.SingleGrade{
+		GradeID:    updatedGrade.GradeID,
+		StudentID:  updatedGrade.StudentID,
+		CourseID:   updatedGrade.CourseID,
+		Semester:   updatedGrade.Semester,
+		GradeType:  updatedGrade.GradeType,
+		ItemID:     updatedGrade.ItemID,
+		GradeValue: updatedGrade.GradeValue,
+		GradedBy:   updatedGrade.GradedBy,
+		Comments:   updatedGrade.Comments,
+	}
+
+	return &gpb.UpdateSingleGradeResponse{Grade: grade}, nil
 }
 
 // RemoveSingleGrade removes a single grade for a specific student in a specific course for a specific semester.
 func (s *GradesServer) RemoveSingleGrade(ctx context.Context,
 	req *gpb.RemoveSingleGradeRequest,
 ) (*gpb.RemoveSingleGradeResponse, error) {
-	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
+	if err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
 
 	logger := klog.FromContext(ctx)
-	logger.V(logLevelDebug).Info("Received request to remove a single grade", "course_id", req.GetCourseId(),
-		"semester", req.GetSemester(), "student_id", req.GetStudentId(), "grade_id", req.GetGradeId())
+	logger.V(logLevelDebug).Info("Received request to remove a single grade", "grade_id", req.GetGradeID())
 
-	grade := &Grades{
-		GradesID:  req.GetGradeId(),
-		StudentID: req.GetStudentId(),
-		CourseID:  req.GetCourseId(),
-		Semester:  req.GetSemester(),
-	}
-
-	if err := s.db.RemoveSingleGrade(ctx, grade); err != nil {
+	if err := s.db.RemoveGrade(ctx, req.GetGradeID()); err != nil {
 		return nil, fmt.Errorf("failed to remove single grade: %w", err)
 	}
 
@@ -224,44 +214,58 @@ func (s *GradesServer) RemoveSingleGrade(ctx context.Context,
 func (s *GradesServer) GetStudentSemesterGrades(ctx context.Context,
 	req *gpb.GetStudentSemesterGradesRequest,
 ) (*gpb.GetStudentSemesterGradesResponse, error) {
-	if _, err := s.VerifyToken(ctx, req.GetToken()); err != nil {
+	if err := s.VerifyToken(ctx, req.GetToken()); err != nil {
 		return nil, fmt.Errorf("authentication failed: %w",
 			status.Error(codes.Unauthenticated, err.Error()))
 	}
 
 	logger := klog.FromContext(ctx)
 	logger.V(logLevelDebug).Info("Received request for student semester grades",
-		"semester", req.GetSemester(), "student_id", req.GetStudentId())
+		"semester", req.GetSemester(), "student_id", req.GetStudentID())
 
 	// get student semester grades.
-	grades, err := s.db.GetStudentSemesterGrades(ctx, req.GetSemester(), req.GetStudentId())
+	grades, err := s.db.GetStudentSemesterGrades(ctx, req.GetSemester(), req.GetStudentID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get student semester grades: %w", err)
 	}
 
-	// create response.
-	gradesResponse := []*gpb.SingleGrade{}
+	return &gpb.GetStudentSemesterGradesResponse{
+		Grades: s.createGradesResponse(grades),
+	}, nil
+}
+
+func (s *GradesServer) createGradesResponse(grades []*Grade) []*gpb.SingleGrade {
+	gradesResponse := make([]*gpb.SingleGrade, 0, len(grades))
 	for _, grade := range grades {
 		gradesResponse = append(gradesResponse, &gpb.SingleGrade{
-			GradeId:    grade.GradesID,
-			StudentId:  grade.StudentID,
-			CourseId:   grade.CourseID,
-			Semester:   req.GetSemester(),
+			GradeID:    grade.GradeID,
+			StudentID:  grade.StudentID,
+			CourseID:   grade.CourseID,
+			Semester:   grade.Semester,
 			GradeType:  grade.GradeType,
-			ItemId:     grade.ItemID,
+			ItemID:     grade.ItemID,
 			GradeValue: grade.GradeValue,
 			GradedBy:   grade.GradedBy,
 			Comments:   grade.Comments,
 		})
 	}
 
-	return &gpb.GetStudentSemesterGradesResponse{Grades: gradesResponse}, nil
+	return gradesResponse
 }
 
 // main server function.
 func main() {
+	// init klog
+	klog.InitFlags(nil)
+	flag.Parse()
+
+	err := godotenv.Load()
+	if err != nil {
+		klog.Fatalf("Error loading .env file")
+	}
+
 	// Initialize the server.
-	server, err := initGradesMicroserviceServer(context.Background())
+	server, err := initGradesMicroserviceServer()
 	if err != nil {
 		klog.Fatalf("Failed to initialize server: %v", err)
 	}
@@ -279,7 +283,7 @@ func main() {
 	// create a grpc server.
 	grpcServer := grpc.NewServer()
 	gpb.RegisterGradesServiceServer(grpcServer, server)
-	klog.Info("Grades server is running on port " + os.Getenv("GRPC_PORT"))
+	klog.V(logLevelDebug).Info("Grades server is running on port " + os.Getenv("GRPC_PORT"))
 	// serve the grpc server.
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)

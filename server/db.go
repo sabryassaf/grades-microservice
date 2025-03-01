@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/uuid"
+	gpb "github.com/BetterGR/grades-microservice/protos"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -20,187 +20,226 @@ type Database struct {
 	db *bun.DB
 }
 
-// InitializeDatabase ensures that the database exists and initializes the schema.
-func InitializeDatabase(ctx context.Context) (*Database, error) {
-	createDatabaseIfNotExists(ctx) // Create bettergr if it does not exist.
+var (
+	ErrGradeNil       = errors.New("grade is nil")
+	ErrStudentIDEmpty = errors.New("student ID is empty")
+	ErrCourseIDEmpty  = errors.New("course ID is empty")
+	ErrGradeIDEmpty   = errors.New("grade ID is empty")
+)
 
-	database, err := ConnectDB(ctx) // Connect to bettergr.
+// InitializeDatabase ensures that the database exists and initializes the schema.
+func InitializeDatabase() (*Database, error) {
+	createDatabaseIfNotExists()
+
+	database, err := ConnectDB()
 	if err != nil {
 		return nil, err
 	}
 
-	logger := klog.FromContext(ctx)
-	logger.V(logLevelDebug).Info("Database initialized successfully.")
-
-	if err := database.createSchemaIfNotExists(ctx); err != nil {
+	if err := database.createSchemaIfNotExists(context.Background()); err != nil {
 		klog.Fatalf("Failed to create schema: %v", err)
 	}
-
-	logger.V(logLevelDebug).Info("Schema created successfully.")
 
 	return database, nil
 }
 
-// createDatabaseIfNotExists checks if the database exists and creates it if not.
-func createDatabaseIfNotExists(ctx context.Context) {
-	// Connect to the PostgreSQL server.
+// createDatabaseIfNotExists ensures the database exists.
+func createDatabaseIfNotExists() {
 	dsn := os.Getenv("DSN")
 	connector := pgdriver.NewConnector(pgdriver.WithDSN(dsn))
-	sqldb := sql.OpenDB(connector)
-	logger := klog.FromContext(ctx)
 
+	sqldb := sql.OpenDB(connector)
 	defer sqldb.Close()
 
-	// Check if the database exists.
-	query := `
-		SELECT 1 FROM pg_database WHERE datname = 'bettergrdatabase';
-	`
+	ctx := context.Background()
+	dbName := os.Getenv("DP_NAME")
+	query := "SELECT 1 FROM pg_database WHERE datname = $1;"
 
 	var exists int
 
-	err := sqldb.QueryRowContext(ctx, query).Scan(&exists)
+	err := sqldb.QueryRowContext(ctx, query, dbName).Scan(&exists)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		klog.Fatalf("Failed to check if database exists: %v", err)
+		klog.Fatalf("Failed to check db existence: %v", err)
 	}
 
-	// If the database does not exist, create it.
 	if errors.Is(err, sql.ErrNoRows) {
-		if _, err := sqldb.ExecContext(ctx, `CREATE DATABASE bettergrdatabase;`); err != nil {
+		if _, err = sqldb.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s;", dbName)); err != nil {
 			klog.Fatalf("Failed to create database: %v", err)
 		}
 
-		logger.V(logLevelDebug).Info("Database bettergrdatabase created successfully.")
+		klog.V(logLevelDebug).Infof("Database %s created successfully.", dbName)
 	} else {
-		logger.V(logLevelDebug).Info("Database bettergrdatabase already exists.")
+		klog.V(logLevelDebug).Infof("Database %s already exists.", dbName)
 	}
 }
 
-// ConnectDB initializes the PostgreSQL database connection.
-func ConnectDB(ctx context.Context) (*Database, error) {
+// ConnectDB connects to the database.
+func ConnectDB() (*Database, error) {
 	dsn := os.Getenv("DSN")
 	connector := pgdriver.NewConnector(pgdriver.WithDSN(dsn))
 	sqldb := sql.OpenDB(connector)
 	database := bun.NewDB(sqldb, pgdialect.New())
-	logger := klog.FromContext(ctx)
+
 	// Test the connection.
 	if err := database.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to connect to the database: %w", err)
 	}
 
-	logger.V(logLevelDebug).Info("Connected to PostgreSQL database.")
+	klog.V(logLevelDebug).Info("Connected to PostgreSQL database.")
 
 	return &Database{db: database}, nil
 }
 
-// createSchemaIfNotExists creates the schema if it does not exist.
-func (db *Database) createSchemaIfNotExists(ctx context.Context) error {
+// createSchemaIfNotExists creates the database schema if it doesn't exist.
+func (d *Database) createSchemaIfNotExists(ctx context.Context) error {
 	models := []interface{}{
-		(*Grades)(nil),
+		(*Grade)(nil),
 	}
 
 	for _, model := range models {
-		if _, err := db.db.NewCreateTable().IfNotExists().Model(model).Exec(ctx); err != nil {
+		if _, err := d.db.NewCreateTable().IfNotExists().Model(model).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	}
 
-	klog.Info("Database schema initialized.")
+	klog.V(logLevelDebug).Info("Database schema initialized.")
 
 	return nil
 }
 
-// Grades represents the grades table.
-type Grades struct {
-	GradesID   string    `bun:"grades_id,pk,autoincrement"`
-	StudentID  string    `bun:"student_id"`
-	CourseID   string    `bun:"course_id"`
-	Semester   string    `bun:"semester"`
-	GradeType  string    `bun:"grade_type"`
+// Grade represents the grades table.
+type Grade struct {
+	GradeID    string    `bun:"grade_id,unique,pk,default:uuid_generate_v4()"`
+	StudentID  string    `bun:"student_id,notnull"`
+	CourseID   string    `bun:"course_id,notnull"`
+	Semester   string    `bun:"semester,notnull"`
+	GradeType  string    `bun:"grade_type,notnull"`
 	ItemID     string    `bun:"item_id"`
-	GradeValue string    `bun:"grade_value"`
+	GradeValue string    `bun:"grade_value,notnull"`
 	GradedBy   string    `bun:"graded_by"`
-	GradedAt   time.Time `bun:"graded_at"`
-	UpdatedAt  time.Time `bun:"updated_at"`
+	GradedAt   time.Time `bun:"graded_at,default:current_timestamp"`
+	UpdatedAt  time.Time `bun:"updated_at,default:current_timestamp"`
 	Comments   string    `bun:"comments"`
 }
 
-// GetStudentCourseGrades returns all grades for a specific course for a specific semester for a specific student.
-func (db *Database) GetStudentCourseGrades(ctx context.Context, courseID string,
-	semester string, studentID string,
-) ([]*Grades, error) {
-	grades := []*Grades{}
+// AddGrade adds a grade to the database.
+func (d *Database) AddGrade(ctx context.Context, grade *gpb.SingleGrade) (*Grade, error) {
+	if grade == nil {
+		return nil, fmt.Errorf("%w", ErrGradeNil)
+	}
 
-	if err := db.db.NewSelect().Model(&grades).Where("course_id = ?", courseID).Where("semester = ?",
-		semester).Where("student_id = ?", studentID).Scan(ctx); err != nil {
+	newGrade := &Grade{
+		StudentID:  grade.GetStudentID(),
+		CourseID:   grade.GetCourseID(),
+		Semester:   grade.GetSemester(),
+		GradeType:  grade.GetGradeType(),
+		ItemID:     grade.GetItemID(),
+		GradeValue: grade.GetGradeValue(),
+		GradedBy:   grade.GetGradedBy(),
+		Comments:   grade.GetComments(),
+	}
+
+	if _, err := d.db.NewInsert().Model(newGrade).Exec(ctx); err != nil {
+		return nil, fmt.Errorf("failed to add grade: %w", err)
+	}
+
+	return newGrade, nil
+}
+
+// GetCourseGrades retrieves all grades for a course.
+func (d *Database) GetCourseGrades(ctx context.Context, courseID, semester string) ([]*Grade, error) {
+	if courseID == "" {
+		return nil, fmt.Errorf("%w", ErrCourseIDEmpty)
+	}
+
+	var grades []*Grade
+	if err := d.db.NewSelect().Model(&grades).Where("course_id = ? AND semester = ?",
+		courseID, semester).Scan(ctx); err != nil {
 		return nil, fmt.Errorf("failed to get course grades: %w", err)
 	}
 
 	return grades, nil
 }
 
-// AddSingleGrade adds a grade for a specific course for a specific semester for a specific student.
-func (db *Database) AddSingleGrade(ctx context.Context, grade *Grades) error {
-	// create unique grade id.
-	grade.GradesID = uuid.New().String()
-	grade.GradedAt = time.Now()
-	grade.UpdatedAt = time.Now()
-
-	if _, err := db.db.NewInsert().Model(grade).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to add grade: %w", err)
+// GetStudentCourseGrades retrieves all grades for a student in a course.
+func (d *Database) GetStudentCourseGrades(ctx context.Context,
+	courseID, semester, studentID string,
+) ([]*Grade, error) {
+	if studentID == "" {
+		return nil, fmt.Errorf("%w", ErrStudentIDEmpty)
 	}
 
-	return nil
+	var grades []*Grade
+	if err := d.db.NewSelect().Model(&grades).Where("course_id = ? AND semester = ? AND student_id = ?",
+		courseID, semester, studentID).Scan(ctx); err != nil {
+		return nil, fmt.Errorf("failed to get student course grades: %w", err)
+	}
+
+	return grades, nil
 }
 
-// UpdateSingleGrade updates a grade for a specific course for a specific semester for a specific student.
-func (db *Database) UpdateSingleGrade(ctx context.Context, grade *Grades) error {
-	// find unique grade.
-	existingGrade := &Grades{}
-	if err := db.db.NewSelect().Model(existingGrade).Where("grades_id = ?",
-		grade.GradesID).Where("student_id = ?", grade.StudentID).Where("course_id = ?",
-		grade.CourseID).Where("semester = ?", grade.Semester).Scan(ctx); err != nil {
-		return fmt.Errorf("failed to find grade: %w", err)
+// UpdateGrade updates a grade in the database.
+func (d *Database) UpdateGrade(ctx context.Context, grade *gpb.SingleGrade) (*Grade, error) {
+	if grade == nil {
+		return nil, fmt.Errorf("%w", ErrGradeNil)
 	}
 
-	if _, err := db.db.NewUpdate().Model(grade).Where("grades_id = ?",
-		existingGrade.GradesID).Where("student_id = ?", existingGrade.StudentID).Where("course_id = ?",
-		existingGrade.CourseID).Where("semester = ?", existingGrade.Semester).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to update grade: %w", err)
+	if grade.GetGradeID() == "" {
+		return nil, fmt.Errorf("%w", ErrGradeIDEmpty)
 	}
 
-	return nil
+	// Get the grade from the database.
+	existingGrade := &Grade{GradeID: grade.GetGradeID()}
+	if err := d.db.NewSelect().Model(existingGrade).WherePK().Scan(ctx); err != nil {
+		return nil, fmt.Errorf("failed to get grade: %w", err)
+	}
+
+	// Update the fields.
+	updateField := func(field *string, newValue string) {
+		if newValue != "" {
+			*field = newValue
+		}
+	}
+
+	updateField(&existingGrade.StudentID, grade.GetStudentID())
+	updateField(&existingGrade.CourseID, grade.GetCourseID())
+	updateField(&existingGrade.Semester, grade.GetSemester())
+	updateField(&existingGrade.GradeType, grade.GetGradeType())
+	updateField(&existingGrade.ItemID, grade.GetItemID())
+	updateField(&existingGrade.GradeValue, grade.GetGradeValue())
+	updateField(&existingGrade.GradedBy, grade.GetGradedBy())
+	updateField(&existingGrade.Comments, grade.GetComments())
+
+	if _, err := d.db.NewUpdate().Model(existingGrade).WherePK().Exec(ctx); err != nil {
+		return nil, fmt.Errorf("failed to update grade: %w", err)
+	}
+
+	return existingGrade, nil
 }
 
-// RemoveSingleGrade removes a grade for a specific course for a specific semester for a specific student.
-func (db *Database) RemoveSingleGrade(ctx context.Context, grade *Grades) error {
-	if _, err := db.db.NewDelete().Model(grade).Where("grades_id = ?",
-		grade.GradesID).Exec(ctx); err != nil {
+// DeleteGrade deletes a grade from the database.
+func (d *Database) RemoveGrade(ctx context.Context, gradeID string) error {
+	if gradeID == "" {
+		return fmt.Errorf("%w", ErrGradeIDEmpty)
+	}
+
+	grade := &Grade{GradeID: gradeID}
+	if _, err := d.db.NewDelete().Model(grade).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete grade: %w", err)
 	}
 
 	return nil
 }
 
-// GetCourseGrades returns all students grades for a specific course for a specific semester.
-func (db *Database) GetCourseGrades(ctx context.Context, courseID string, semester string) ([]*Grades, error) {
-	grades := []*Grades{}
-
-	if err := db.db.NewSelect().Model(&grades).Where(
-		"course_id = ?", courseID).Where("semester = ?", semester).Scan(ctx); err != nil {
-		return nil, fmt.Errorf("failed to get course grades: %w", err)
+// GetStudentSemesterGrades retrieves all grades for a student in a semester.
+func (d *Database) GetStudentSemesterGrades(ctx context.Context, studentID, semester string) ([]*Grade, error) {
+	if studentID == "" {
+		return nil, fmt.Errorf("%w", ErrStudentIDEmpty)
 	}
 
-	return grades, nil
-}
-
-// GetStudentSemesterGrades returns all grades for a specific student for a specific semester.
-func (db *Database) GetStudentSemesterGrades(ctx context.Context, semester string,
-	studentID string,
-) ([]*Grades, error) {
-	grades := []*Grades{}
-
-	if err := db.db.NewSelect().Model(&grades).Where("student_id = ?",
-		studentID).Where("semester = ?", semester).Scan(ctx); err != nil {
+	var grades []*Grade
+	if err := d.db.NewSelect().Model(&grades).Where("student_id = ? AND semester = ?",
+		studentID, semester).Scan(ctx); err != nil {
 		return nil, fmt.Errorf("failed to get student semester grades: %w", err)
 	}
 
