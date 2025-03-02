@@ -22,12 +22,22 @@ const (
 	logLevelDebug      = 5
 )
 
+// DBInterface defines the interface for database operations.
+type DBInterface interface {
+	AddGrade(ctx context.Context, grade *gpb.SingleGrade) (*Grade, error)
+	GetCourseGrades(ctx context.Context, courseID, semester string) ([]*Grade, error)
+	GetStudentCourseGrades(ctx context.Context, courseID, semester, studentID string) ([]*Grade, error)
+	UpdateGrade(ctx context.Context, grade *gpb.SingleGrade) (*Grade, error)
+	RemoveGrade(ctx context.Context, gradeID string) error
+	GetStudentSemesterGrades(ctx context.Context, studentID, semester string) ([]*Grade, error)
+}
+
 // GradesServer is the server struct still needs to implement the GradesServiceServer interface.
 type GradesServer struct {
 	// throws unimplemented error.
 	gpb.UnimplementedGradesServiceServer
 	ms.BaseServiceServer
-	db     *Database
+	db     DBInterface
 	Claims ms.Claims
 }
 
@@ -200,7 +210,7 @@ func (s *GradesServer) GetStudentSemesterGrades(ctx context.Context,
 		"semester", req.GetSemester(), "student_id", req.GetStudentID())
 
 	// get student semester grades.
-	grades, err := s.db.GetStudentSemesterGrades(ctx, req.GetSemester(), req.GetStudentID())
+	grades, err := s.db.GetStudentSemesterGrades(ctx, req.GetStudentID(), req.GetSemester())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get student semester grades: %w", err)
 	}

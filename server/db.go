@@ -20,6 +20,9 @@ type Database struct {
 	db *bun.DB
 }
 
+// Verify that Database implements DBInterface at compile time.
+var _ DBInterface = (*Database)(nil)
+
 var (
 	ErrGradeNil       = errors.New("grade is nil")
 	ErrStudentIDEmpty = errors.New("student ID is empty")
