@@ -79,7 +79,7 @@ func createTestGrade() *gpb.SingleGrade {
 		GradeID:    uuid.New().String(),
 		StudentID:  uuid.New().String(),
 		CourseID:   uuid.New().String(),
-		Semester:   "Fall 2023",
+		Semester:   "Winter_2023",
 		GradeType:  "Exam",
 		ItemID:     uuid.New().String(),
 		GradeValue: "A",

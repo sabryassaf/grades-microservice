@@ -72,7 +72,12 @@ message UpdateSingleGradeResponse {
 // RemoveSingleGradeRequest is a request message to remove a single grade for a specific student in a specific course for a specific semester.
 message RemoveSingleGradeRequest {
     string token = 1;
-    string gradeID = 5;
+    string studentID = 2;
+    string courseID = 3;
+    string semester = 4;
+    string gradeType = 5;
+    string itemID = 6;
+    string gradeID = 7;
 }
 
 // RemoveSingleGradeResponse is a response message to remove a single grade for a specific student in a specific course for a specific semester.
