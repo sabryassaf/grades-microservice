@@ -246,8 +246,6 @@ func main() {
 		klog.Fatalf("Failed to initialize server: %v", err)
 	}
 
-	// init klog.
-	klog.InitFlags(nil)
 	// create a listener.
 	address := "localhost:" + os.Getenv("GRPC_PORT")
 
