@@ -40,7 +40,7 @@ To start the server, open the terminal in the grades-microservice directory and 
 
 To run unit tests:
 
-    make tests
+    make test
 
 **6. Makefile Help**
 
