@@ -14,109 +14,162 @@
 
 syntax = "proto3";
 
-option go_package = "github.com/BetterGR/grades-microservice/protos";
+// Use a versioned, domain-specific package name.
+package com.bettergr.grades.v1;
 
-package grades;
+option go_package = "github.com/BetterGR/grades-microservice/protos/com/bettergr/grades/v1";
 
-//GradesService is a microservice responsible for managing grades.
+// GradesService manages student grade information.
 service GradesService {
-    // GetCourseGrades returns all students grades enrolled in a specific course for a specific semester.
+    // GetCourseGrades retrieves a paginated list of grades for all students enrolled
+    // in a specific course during a specific semester.
     rpc GetCourseGrades(GetCourseGradesRequest) returns (GetCourseGradesResponse);
-    // GetStudentCourseGrades returns a specific student all grades in a specific course for a specific semester.
+
+    // GetStudentCourseGrades retrieves a paginated list of grades for a specific student
+    // within a specific course and semester.
     rpc GetStudentCourseGrades(GetStudentCourseGradesRequest) returns (GetStudentCourseGradesResponse);
-    // AddSingleGrade adds a single grade for a student in a course for a specific semester.
+
+    // AddSingleGrade adds a new grade entry for a student in a course.
     rpc AddSingleGrade(AddSingleGradeRequest) returns (AddSingleGradeResponse);
-    // UpdateSingleGrade updates a single grade for a student in a course for a specific semester.
+
+    // UpdateSingleGrade modifies an existing grade entry.
     rpc UpdateSingleGrade(UpdateSingleGradeRequest) returns (UpdateSingleGradeResponse);
-    // RemoveSingleGrade removes a single grade for a student in a course for a specific semester.
+
+    // RemoveSingleGrade deletes a specific grade entry.
     rpc RemoveSingleGrade(RemoveSingleGradeRequest) returns (RemoveSingleGradeResponse);
-    // GetStudentSemesterGrades returns all grades for a specific student for a specific semester.
+
+    // GetStudentSemesterGrades retrieves a paginated list of all grades for a specific student
+    // across all courses during a specific semester.
     rpc GetStudentSemesterGrades(GetStudentSemesterGradesRequest) returns (GetStudentSemesterGradesResponse);
 }
 
-// AddSingleGradeRequest is a request message to add a single grade for a student in a course.
-message AddSingleGradeRequest {
-    string token = 1;
-    SingleGrade grade = 2;
-}
-
-// AddSingleGradeResponse is a response message to add a single grade for a specific student in a specific course for a specific semester.
-message AddSingleGradeResponse {
-	SingleGrade grade = 1;
-}
-
-// GetStundetCourseGradesRequest is a request message to get all grades for a student in a specific course for a specific semester.
-message GetStudentCourseGradesRequest {
-    string token = 1;
-    string courseID = 2;
-    string semester = 3;
-    string studentID = 4;
-}
-
-// GetStudentCourseGradesResponse is a response message to get all grades for a student in a specific course for a specific semester.
-message GetStudentCourseGradesResponse {
-    repeated SingleGrade grades = 1;
-}
-
-// UpdateSingleGradeRequest is a request message to update a single grade for a specific student in a specific course for a specific semester.
-message UpdateSingleGradeRequest {
-    string token = 1;
-    SingleGrade grade = 2;
-}
-
-// UpdateSingleGradeResponse is a response message to update a single grade for a specific student in a specific course for a specific semester.
-message UpdateSingleGradeResponse {
-	SingleGrade grade = 1;
-}
-
-// RemoveSingleGradeRequest is a request message to remove a single grade for a specific student in a specific course for a specific semester.
-message RemoveSingleGradeRequest {
-    string token = 1;
-    string studentID = 2;
-    string courseID = 3;
-    string semester = 4;
-    string gradeType = 5;
-    string itemID = 6;
-    string gradeID = 7;
-}
-
-// RemoveSingleGradeResponse is a response message to remove a single grade for a specific student in a specific course for a specific semester.
-message RemoveSingleGradeResponse {
-}
-
-// GetCourseGradesRequest is a request message to get all students grades for a specific course for a specific semester.
-message GetCourseGradesRequest {
-    string token = 1;
-    string courseID = 2;
-    string semester = 3;
-}
-
-// GetCourseGradesResponse is a response message to get all students grades for a specific course for a specific semester.
-message GetCourseGradesResponse {
-    repeated SingleGrade grades = 1;
-}
-
-// GetStudentSemesterGradesRequest is a request message to get all grades for a specific student for a specific semester.
-message GetStudentSemesterGradesRequest {
-    string token = 1;
-    string semester = 2;
-    string studentID = 3;
-}
-
-// GetStudentSemesterGradesResponse is a response message to get all grades for a specific student for a specific semester.
-message GetStudentSemesterGradesResponse {
-    repeated SingleGrade grades = 1;
-}
-
-// SingleGrade is a single grade message.
-message SingleGrade {
+// Represents a single grade entry.
+message Grade {
+    // The academic semester.
     string semester = 1;
-    string gradeID = 2;
-    string studentID = 3;
-    string courseID = 4;
-    string gradeType = 5;
-    string itemID = 6;
-    string gradeValue = 7;
-    string gradedBy = 8;
+    // Unique identifier for the grade entry.
+    string grade_id = 2;
+    // Identifier for the student.
+    string student_id = 3;
+    // Identifier for the course.
+    string course_id = 4;
+    // Type of the grade (e.g., "Homework", "Exam", "Quiz"). Consider using an enum if values are fixed.
+    string grade_type = 5;
+    // Identifier for the specific graded item (e.g., assignment ID).
+    string item_id = 6;
+    // The value or score of the grade.
+    string grade_value = 7;
+    // Identifier of the user who assigned the grade.
+    string graded_by = 8;
+    // Optional comments related to the grade.
     string comments = 9;
+}
+
+// Request message for adding a single grade.
+message AddSingleGradeRequest {
+    // Authentication token for authorization.
+    string token = 1;
+    // The grade details to add.
+    Grade grade = 2;
+}
+
+// Response message after adding a single grade.
+message AddSingleGradeResponse {
+	// The newly added grade details.
+	Grade grade = 1;
+}
+
+// Request message for retrieving grades of a specific student in a specific course.
+message GetStudentCourseGradesRequest {
+    // Authentication token for authorization.
+    string token = 1;
+    // Identifier for the course.
+    string course_id = 2;
+    // The academic semester.
+    string semester = 3;
+    // Identifier for the student.
+    string student_id = 4;
+    // The maximum number of grades to return.
+    int32 page_size = 5;
+    // A token identifying a page of results the server should return.
+    string page_token = 6;
+}
+
+// Response message containing grades for a specific student in a specific course.
+message GetStudentCourseGradesResponse {
+    // List of grades matching the request criteria.
+    repeated Grade grades = 1;
+    // Token to retrieve the next page of results, or empty if there are no more results.
+    string next_page_token = 2;
+}
+
+// Request message for updating a single grade.
+message UpdateSingleGradeRequest {
+    // Authentication token for authorization.
+    string token = 1;
+    // The updated grade details. `grade_id` must match an existing grade.
+    Grade grade = 2;
+}
+
+// Response message after updating a single grade.
+message UpdateSingleGradeResponse {
+	// The updated grade details.
+	Grade grade = 1;
+}
+
+// Request message for removing a single grade.
+message RemoveSingleGradeRequest {
+    // Authentication token for authorization.
+    string token = 1;
+    // Identifier for the grade entry to remove.
+    string grade_id = 2;
+}
+
+// Response message after removing a single grade.
+message RemoveSingleGradeResponse {
+    // Empty response indicates successful removal.
+}
+
+// Request message for retrieving all grades for a specific course.
+message GetCourseGradesRequest {
+    // Authentication token for authorization.
+    string token = 1;
+    // Identifier for the course.
+    string course_id = 2;
+    // The academic semester.
+    string semester = 3;
+    // The maximum number of grades to return.
+    int32 page_size = 4;
+    // A token identifying a page of results the server should return.
+    string page_token = 5;
+}
+
+// Response message containing all grades for a specific course.
+message GetCourseGradesResponse {
+    // List of grades matching the request criteria.
+    repeated Grade grades = 1;
+    // Token to retrieve the next page of results, or empty if there are no more results.
+    string next_page_token = 2;
+}
+
+// Request message for retrieving all grades for a specific student in a specific semester.
+message GetStudentSemesterGradesRequest {
+    // Authentication token for authorization.
+    string token = 1;
+    // The academic semester.
+    string semester = 2;
+    // Identifier for the student.
+    string student_id = 3;
+    // The maximum number of grades to return.
+    int32 page_size = 4;
+    // A token identifying a page of results the server should return.
+    string page_token = 5;
+}
+
+// Response message containing all grades for a specific student in a specific semester.
+message GetStudentSemesterGradesResponse {
+    // List of grades matching the request criteria.
+    repeated Grade grades = 1;
+    // Token to retrieve the next page of results, or empty if there are no more results.
+    string next_page_token = 2;
 }
